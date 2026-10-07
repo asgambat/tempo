@@ -1,0 +1,177 @@
+version: '3'
+
+# Taskfile for Tempo — lifecycle commands (build, verify, docs, release).
+# Requires go-task: https://taskfile.dev (e.g. `brew install go-task`, `snap install task --classic`,
+# `go install github.com/go-task/task/v3/cmd/task@latest`).
+# List every task with: `task --list`
+# FLAVOR var accepts: Tempo | Notquitemy | Play (default: Tempo) — see `task flavors`.
+# NOTE: prefer `task --dry <task>` to inspect commands without running them, and avoid
+# full builds on constrained hosts (e.g. Raspberry Pi) — heavy tasks are for CI/user machine.
+
+vars:
+  FLAVOR: '{{.FLAVOR | default "Tempo"}}'
+
+set: [errexit]
+
+tasks:
+  default:
+    desc: List all available tasks
+    cmds:
+      - task --list
+
+  # ─── Build & run ─────────────────────────────────────────────────────────────
+
+  build:
+    desc: Build debug APK for FLAVOR (Tempo|Notquitemy|Play) — heavy, avoid on constrained hosts
+    cmds:
+      - ./gradlew assemble{{.FLAVOR}}Debug
+
+  build:all:
+    desc: Build debug APK for all three flavors
+    cmds:
+      - ./gradlew assembleTempoDebug assembleNotquitemyDebug assemblePlayDebug
+
+  build:release:
+    desc: Build release APK (minified, ProGuard) for FLAVOR
+    cmds:
+      - ./gradlew assemble{{.FLAVOR}}Release
+
+  install:
+    desc: Install debug APK on a connected device for FLAVOR
+    cmds:
+      - ./gradlew install{{.FLAVOR}}Debug
+
+  compile:
+    desc: Fast Java compilation check for FLAVOR (minimum single-flavor check)
+    cmds:
+      - ./gradlew :app:compile{{.FLAVOR}}DebugJavaWithJavac
+
+  clean:
+    desc: Remove build outputs
+    cmds:
+      - ./gradlew clean
+
+  deps:refresh:
+    desc: Re-download dependencies and build FLAVOR debug
+    cmds:
+      - ./gradlew assemble{{.FLAVOR}}Debug --refresh-dependencies
+
+  # ─── Verification (agent-friendly) ──────────────────────────────────────────
+
+  verify:
+    desc: Compile Java of all three flavors (heavy — avoid on constrained hosts, use `compile` first)
+    cmds:
+      - ./gradlew :app:compileTempoDebugJavaWithJavac :app:compileNotquitemyDebugJavaWithJavac :app:compilePlayDebugJavaWithJavac
+
+  docs:check:
+    desc: Check that every local doc referenced by AGENTS.MD/README exists
+    cmds:
+      - |
+        REFS=$(grep -hoE '\((AGENTS\.MD|README\.md|Taskfile\.yml|docs/[A-Za-z-]+\.md)\)' AGENTS.MD README.md docs/*.md | tr -d '()' | sort -u || true)
+        MISSING=0
+        for REF in $REFS; do
+          if [ ! -f "$REF" ]; then echo "MISSING: $REF"; MISSING=1; fi
+        done
+        if [ "$MISSING" -eq 0 ]; then echo "All referenced docs exist."; else exit 1; fi
+
+  flavors:
+    desc: Print the flavor matrix (applicationId, Cast, distribution)
+    silent: true
+    cmds:
+      - |
+        cat <<'EOF'
+        FLAVOR var (build/install/compile/build:release): Tempo | Notquitemy | Play
+
+        | flavor     | applicationId                         | Cast | distribution          |
+        |------------|---------------------------------------|------|-----------------------|
+        | Tempo      | com.cappielloantonio.tempo            | yes  | GitHub / F-Droid (CI) |
+        | Notquitemy | com.cappielloantonio.notquitemy.tempo | no   | F-Droid (no GMS)      |
+        | Play       | com.cappielloantonio.play.tempo       | yes  | Play Store            |
+        EOF
+
+  agents:context:
+    desc: Print quick project context for agent bootstrap
+    silent: true
+    cmds:
+      - |
+        CODE=$(sed -nE 's/.*versionCode ([0-9]+).*/\1/p' app/build.gradle)
+        NAME=$(sed -nE "s/.*versionName '([^']+)'.*/\1/p" app/build.gradle)
+        echo "Tempo — Subsonic music client (Android, ViewBinding, no DI, 3 flavors)"
+        echo "Version: $NAME (versionCode $CODE)"
+        echo "Docs: AGENTS.MD (rules) | docs/ARCHITECTURE.md | docs/CONVENTIONS.md | docs/BUILD.md"
+        echo "Minimum verification: task verify"
+        echo "See also: task flavors, task docs:check"
+
+  # ─── Release lifecycle ──────────────────────────────────────────────────────
+
+  bump:
+    desc: Bump versionCode (+1) and versionName patch; or pass VERSION=x.y.z for an explicit bump
+    vars:
+      CODE:
+        sh: sed -nE 's/.*versionCode ([0-9]+).*/\1/p' app/build.gradle
+      NAME:
+        sh: sed -nE "s/.*versionName '([^']+)'.*/\1/p" app/build.gradle
+    cmds:
+      - |
+        NEW_NAME="{{.VERSION | default ""}}"
+        if [ -z "$NEW_NAME" ]; then
+          MAJOR=$(echo "{{.NAME}}" | cut -d. -f1)
+          MINOR=$(echo "{{.NAME}}" | cut -d. -f2)
+          PATCH=$(echo "{{.NAME}}" | cut -d. -f3)
+          NEW_NAME="$MAJOR.$MINOR.$((PATCH + 1))"
+        fi
+        NEW_CODE=$(( {{.CODE}} + 1 ))
+        sed -i "s/versionCode .*/versionCode $NEW_CODE/" app/build.gradle
+        sed -i "s/versionName .*/versionName '$NEW_NAME'/" app/build.gradle
+        echo "versionCode: {{.CODE}} -> $NEW_CODE | versionName: {{.NAME}} -> $NEW_NAME"
+
+  changelog:
+    desc: Create (or confirm) the fastlane changelog file for the current versionCode
+    vars:
+      CODE:
+        sh: sed -nE 's/.*versionCode ([0-9]+).*/\1/p' app/build.gradle
+    cmds:
+      - |
+        FILE="fastlane/metadata/android/en-US/changelogs/{{.CODE}}.txt"
+        if [ -f "$FILE" ]; then
+          echo "Changelog already present: $FILE"
+        else
+          touch "$FILE"
+          echo "Created: $FILE — fill it before releasing."
+        fi
+
+  release:checklist:
+    desc: Print the release checklist (from docs/BUILD.md)
+    silent: true
+    cmds:
+      - |
+        cat <<'EOF'
+        1. task bump [VERSION=x.y.z]        → versionCode/versionName in app/build.gradle
+        2. task changelog                   → fastlane/metadata/android/en-US/changelogs/<versionCode>.txt
+        3. Update screenshots if UI changed → fastlane/metadata/android/en-US/images/ (and mockup/)
+        4. Commit + push, then              → task release:tag VERSION=x.y.z
+        5. Watch GitHub Actions             → asset: app-tempo-release.apk
+        Details: docs/BUILD.md §5
+        EOF
+
+  release:sign:
+    desc: Sign a release APK in place with apksigner (vars APK, KEYSTORE; env KEY_ALIAS, KS_PASS, KEY_PASS)
+    requires:
+      vars: [APK, KEYSTORE]
+    cmds:
+      - |
+        command -v apksigner >/dev/null || { echo "apksigner not found — add Android SDK build-tools to PATH"; exit 1; }
+        [ -n "$KEY_ALIAS" ] || { echo "Missing env KEY_ALIAS"; exit 1; }
+        [ -n "$KS_PASS" ]   || { echo "Missing env KS_PASS"; exit 1; }
+        [ -n "$KEY_PASS" ]  || { echo "Missing env KEY_PASS"; exit 1; }
+        apksigner sign --ks "{{.KEYSTORE}}" --ks-key-alias "$KEY_ALIAS" --ks-pass "env:KS_PASS" --key-pass "env:KEY_PASS" "{{.APK}}"
+        apksigner verify --print-certs "{{.APK}}"
+
+  release:tag:
+    desc: Tag the current HEAD with VERSION=x.y.z and push the tag (triggers the GitHub release workflow)
+    requires:
+      vars: [VERSION]
+    prompt: Create and push tag {{.VERSION}}? This triggers the release CI.
+    cmds:
+      - git tag {{.VERSION}}
+      - git push origin {{.VERSION}}

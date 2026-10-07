@@ -85,6 +85,27 @@ If you would like to sponsor the project and show your support, you can make a d
     <img src="mockup/dark/8_screenshot.png" width=200>
 </p>
 
+## Development
+
+Tempo is a single-module Android app (Gradle in Groovy DSL, View-based UI with ViewBinding, no DI framework). The developer documentation is versioned in this repository and must be kept up to date with every iteration:
+
+- [`AGENTS.MD`](AGENTS.MD) — working rules, conventions and per-task checklists for agentic/iterative development. **Start here.**
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — layers, data flow, playback pipeline, Subsonic client, database, offline mode, Android Auto.
+- [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md) — coding/naming conventions adopted by the project, with code patterns.
+- [`docs/BUILD.md`](docs/BUILD.md) — build flavors, signing, CI and release checklist.
+
+Quick build (JDK 17 required):
+
+```bash
+./gradlew assembleTempoDebug        # GitHub / F-Droid flavor
+./gradlew assembleNotquitemyDebug   # F-Droid variant (no Cast)
+./gradlew assemblePlayDebug         # Play Store flavor
+```
+
+A root [`Taskfile.yml`](Taskfile.yml) ([go-task](https://taskfile.dev)) wraps these lifecycle commands — run `task --list`.
+
+There are no unit tests yet: the minimum verification for any change is a successful compile of every touched flavor.
+
 ## License
 
 Tempo is released under the [GNU General Public License v3.0](LICENSE). Feel free to modify, distribute, and use the app in accordance with the terms of the license. Contributions to the project are also welcome. 
