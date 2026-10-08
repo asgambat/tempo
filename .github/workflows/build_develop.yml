@@ -38,6 +38,27 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
+      # Fallisce subito (prima della build Gradle) se il segreto del keystore è corrotto:
+      # in caso contrario apksigner esplode dopo la build con "Tag number over 30 is not supported"
+      - name: Verify keystore secret
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::warning::KEYSTORE_BASE64 non impostato (fork senza segreti): verifica del keystore saltata"
+            exit 0
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | tr -d ' \t\r\n' > "$RUNNER_TEMP/keystore.b64"
+          base64 --decode "$RUNNER_TEMP/keystore.b64" > "$RUNNER_TEMP/keystore.p12" || {
+            echo "::error::KEYSTORE_BASE64 non è base64 valido: ricaricare il segreto (output di: base64 -w0 keystore)"
+            exit 1
+          }
+          keytool -list -keystore "$RUNNER_TEMP/keystore.p12" -storepass "$KEYSTORE_PASSWORD" >/dev/null 2>&1 || {
+            echo "::error::Keystore illeggibile o KEYSTORE_PASSWORD errata: verificare localmente con 'keytool -list -keystore <keystore>' e ricaricare KEYSTORE_BASE64"
+            exit 1
+          }
+
       - name: Extract version name
         id: version
         run: echo "name=$(grep -oP "versionName '\K[^']+" app/build.gradle)" >> "$GITHUB_OUTPUT"
@@ -54,21 +75,20 @@ jobs:
 
       - name: Sign tempo release APK
         id: sign_apk
-        uses: r0adkll/sign-android-release@v1
+        uses: ilharp/sign-android-release@v2
         with:
-          releaseDirectory: app/build/outputs/apk/tempo/release
-          signingKeyBase64: ${{ secrets.KEYSTORE_BASE64 }}
-          alias: ${{ secrets.KEY_ALIAS_GITHUB }}
+          releaseDir: app/build/outputs/apk/tempo/release
+          signingKey: ${{ secrets.KEYSTORE_BASE64 }}
+          keyAlias: ${{ secrets.KEY_ALIAS_GITHUB }}
           keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD_GITHUB }}
-        env:
-          BUILD_TOOLS_VERSION: ${{ env.BUILD_TOOL_VERSION }}
+          buildToolsVersion: ${{ env.BUILD_TOOL_VERSION }}
 
       - name: Upload Tempo signed release APK
         uses: actions/upload-artifact@v4
         with:
           name: Tempo-${{ steps.version.outputs.name }}-signed-release
-          path: ${{ steps.sign_apk.outputs.signedReleaseFile }}
+          path: ${{ steps.sign_apk.outputs.signedFile }}
           if-no-files-found: error
           retention-days: 14
 

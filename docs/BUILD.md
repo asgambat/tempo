@@ -55,23 +55,76 @@ Gli stessi comandi sono incapsulati nel `Taskfile.yml` della root ([go-task](htt
 
 - Nessun keystore è nel repo (correttamente). La CI firma con segreti GitHub: `KEYSTORE_BASE64`, `KEY_ALIAS_GITHUB`, `KEYSTORE_PASSWORD`, `KEY_PASSWORD_GITHUB`.
 - Per firmare in locale: configurare `signingConfigs` **solo localmente** (non committare credenziali) o usare `apksigner` sull'APK non firmato.
+- **Generazione di un keystore nuovo** — solo se non ne possiedi già uno (una firma diversa impedisce gli aggiornamenti delle installazioni esistenti, v. note in §4.1). Comando con JDK 17 (quello della CI); chiede store/key password e dati del certificato:
+
+  ```bash
+  keytool -genkeypair -v \
+    -keystore tempo-release.keystore \
+    -storetype PKCS12 \
+    -alias tempo \
+    -keyalg RSA -keysize 2048 \
+    -validity 10000
+  ```
+
+- Verifica e codifica del keystore prima di caricare/aggiornare il segreto (da fare **in locale**, il contenuto del segreto non è leggibile dalla CI):
+
+  ```bash
+  # controllo di leggibilità del file originale: deve elencare l'alias
+  keytool -list -keystore tempo-release.keystore
+  # genera la stringa base64 da mettere in KEYSTORE_BASE64 (una riga, senza newline)
+  base64 -w0 tempo-release.keystore > tempo-release.b64
+  # controllo del round-trip esattamente come lo farà la CI: decodifica e rilettura
+  base64 -d tempo-release.b64 > /tmp/ks-check && keytool -list -keystore /tmp/ks-check
+  ```
+
+### 4.1 Checklist secrets GitHub
+
+Quattro segreti **di repository** (Settings → Secrets and variables → Actions → Secrets → New repository secret), usati identici da `build_develop.yml` e `github_release.yml`:
+
+| Secret | Valore da inserire |
+|---|---|
+| `KEYSTORE_BASE64` | Il keystore in base64 **su una riga** (contenuto di `tempo-release.b64`) |
+| `KEYSTORE_PASSWORD` | Store password del keystore |
+| `KEY_ALIAS_GITHUB` | Alias della chiave dentro il keystore (deve apparire in `keytool -list`) |
+| `KEY_PASSWORD_GITHUB` | Con PKCS#12 coincide con la store password |
+
+Procedura:
+
+1. Verificare il keystore e generare il base64 in locale (v. comandi sopra): `keytool -list` deve elencare l'alias senza errori.
+2. Aprire il repository → **Settings** → **Secrets and variables** → **Actions** → scheda **Secrets**.
+3. **New repository secret**, uno per volta, con i nomi esatti della tabella:
+   - `KEYSTORE_BASE64` → incollare il contenuto di `tempo-release.b64` (una sola riga, senza spazi extra né virgolette; il limite GitHub è 64 KB, un keystore 2048-bit sta in ~3–10 KB).
+   - `KEYSTORE_PASSWORD` → la store password scelta alla creazione del keystore.
+   - `KEY_ALIAS_GITHUB` → l'alias della chiave (es. `tempo`).
+   - `KEY_PASSWORD_GITHUB` → la stessa store password (con PKCS#12 coincidono).
+4. Push successivo su `develop` (o nuovo tag): lo step `Verify keystore secret` conferma in ~30 s che il segreto è valido, prima di lanciare la build.
+
+Note:
+
+- I segreti **non sono più visualizzabili** dopo il salvataggio, solo sostituibili: conservare file, alias e password in un backup sicuro (disco cifrato / password manager). Perdere keystore+password = nessun aggiornamento installabile sopra le versioni esistenti.
+- **Mai** committare keystore o password; se un keystore esiste già **non rigenerarlo**: una firma diversa impedisce l'aggiornamento dell'app installata.
+- Su fork senza segreti: `Verify keystore secret` salta con un warning, la firma fallisce come previsto e restano validi i due APK debug.
 
 ## 5. CI e release
 
 Workflow: `.github/workflows/github_release.yml` — scatta su **tag `x.y.z`**:
 
 1. Setup JDK 17 (Zulu) + cache Gradle.
-2. `bash ./gradlew assembleTempoRelease`.
-3. Firma con `r0adkll/sign-android-release`.
-4. Upload artifact + creazione GitHub Release (asset `app-tempo-release.apk`).
+2. Verifica rapida del segreto `KEYSTORE_BASE64` (decodifica + `keytool -list`, saltata sui fork senza segreti).
+3. `bash ./gradlew assembleTempoRelease`.
+4. Firma con `ilharp/sign-android-release@v2`.
+5. Upload artifact + creazione GitHub Release (asset `app-tempo-release.apk`).
+
+⚠️ **Segreto `KEYSTORE_BASE64` corrotto**: se il keystore decodificato non è leggibile, `apksigner` fallisce con `java.io.IOException: Tag number over 30 is not supported` (parser DER della JVM sul file keystore). Verificare sempre il base64 in locale con `keytool -list` prima di caricare il segreto (v. §4).
 
 ### Build continua (develop)
 
 Workflow: `.github/workflows/build_develop.yml` — scatta su ogni **push su `develop`**:
 
 1. Un'unica esecuzione Gradle: `assembleNotquitemyDebug assemblePlayDebug assembleTempoRelease`.
-2. Firma dell'APK release `tempo` con i segreti GitHub (gli stessi di `github_release.yml`).
-3. Upload artifact scaricabili dalla pagina del run: `Tempo-<versione>-signed-release`, `Notquitemy-<versione>-debug`, `Play-<versione>-debug` (retenzione 14 giorni, concorrenza: i push successivi annullano il run in corso).
+2. Verifica rapida del segreto `KEYSTORE_BASE64` (decodifica + `keytool -list`, saltata sui fork senza segreti).
+3. Firma dell'APK release `tempo` con i segreti GitHub (gli stessi di `github_release.yml`, azione `ilharp/sign-android-release@v2`).
+4. Upload artifact scaricabili dalla pagina del run: `Tempo-<versione>-signed-release`, `Notquitemy-<versione>-debug`, `Play-<versione>-debug` (retenzione 14 giorni, concorrenza: i push successivi annullano il run in corso).
 
 ⚠️ La firma richiede i segreti `KEYSTORE_BASE64`, `KEY_ALIAS_GITHUB`, `KEYSTORE_PASSWORD`, `KEY_PASSWORD_GITHUB`: su fork senza segreti il passaggio di firma fallisce (i due APK debug restano validi).
 

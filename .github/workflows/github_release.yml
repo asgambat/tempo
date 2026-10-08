@@ -28,6 +28,27 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
+      # Fallisce subito (prima della build Gradle) se il segreto del keystore è corrotto:
+      # in caso contrario apksigner esplode dopo la build con "Tag number over 30 is not supported"
+      - name: Verify keystore secret
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::warning::KEYSTORE_BASE64 non impostato (fork senza segreti): verifica del keystore saltata"
+            exit 0
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | tr -d ' \t\r\n' > "$RUNNER_TEMP/keystore.b64"
+          base64 --decode "$RUNNER_TEMP/keystore.b64" > "$RUNNER_TEMP/keystore.p12" || {
+            echo "::error::KEYSTORE_BASE64 non è base64 valido: ricaricare il segreto (output di: base64 -w0 keystore)"
+            exit 1
+          }
+          keytool -list -keystore "$RUNNER_TEMP/keystore.p12" -storepass "$KEYSTORE_PASSWORD" >/dev/null 2>&1 || {
+            echo "::error::Keystore illeggibile o KEYSTORE_PASSWORD errata: verificare localmente con 'keytool -list -keystore <keystore>' e ricaricare KEYSTORE_BASE64"
+            exit 1
+          }
+
       - name: Setup build tool version variable
         shell: bash
         run: |
@@ -41,21 +62,20 @@ jobs:
 
       - name: Sign APK
         id: sign_apk
-        uses: r0adkll/sign-android-release@v1
+        uses: ilharp/sign-android-release@v2
         with:
-          releaseDirectory: app/build/outputs/apk/tempo/release
-          signingKeyBase64: ${{ secrets.KEYSTORE_BASE64 }}
-          alias: ${{ secrets.KEY_ALIAS_GITHUB }}
+          releaseDir: app/build/outputs/apk/tempo/release
+          signingKey: ${{ secrets.KEYSTORE_BASE64 }}
+          keyAlias: ${{ secrets.KEY_ALIAS_GITHUB }}
           keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD_GITHUB }}
-        env:
-          BUILD_TOOLS_VERSION: ${{ env.BUILD_TOOL_VERSION }}
+          buildToolsVersion: ${{ env.BUILD_TOOL_VERSION }}
 
       - name: Make artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-signed
-          path: ${{steps.sign_apk.outputs.signedReleaseFile}}
+          path: ${{ steps.sign_apk.outputs.signedFile }}
 
       - name: Create Release
         id: create_release
@@ -73,6 +93,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{steps.sign_apk.outputs.signedReleaseFile}}
+          asset_path: ${{ steps.sign_apk.outputs.signedFile }}
           asset_name: app-tempo-release.apk
           asset_content_type: application/zip
