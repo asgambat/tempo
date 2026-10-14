@@ -59,7 +59,7 @@ public class SongRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getSimilarSongs2() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getSimilarSongs2() != null && response.body().getSubsonicResponse().getSimilarSongs2().getSongs() != null) {
                             instantMix.setValue(response.body().getSubsonicResponse().getSimilarSongs2().getSongs());
                         }
                     }
@@ -169,7 +169,7 @@ public class SongRepository {
                         public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
                             List<Child> songs = new ArrayList<>();
 
-                            if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getSongsByGenre() != null) {
+                            if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getSongsByGenre() != null && response.body().getSubsonicResponse().getSongsByGenre().getSongs() != null) {
                                 songs.addAll(response.body().getSubsonicResponse().getSongsByGenre().getSongs());
                             }
 
@@ -194,7 +194,7 @@ public class SongRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getSong() != null) {
                             song.setValue(response.body().getSubsonicResponse().getSong());
                         }
                     }

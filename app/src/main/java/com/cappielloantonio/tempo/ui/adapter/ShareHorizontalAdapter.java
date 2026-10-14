@@ -41,7 +41,7 @@ public class ShareHorizontalAdapter extends RecyclerView.Adapter<ShareHorizontal
         Share share = shares.get(position);
 
         holder.item.shareTitleTextView.setText(share.getDescription());
-        holder.item.shareSubtitleTextView.setText(holder.itemView.getContext().getString(R.string.share_subtitle_item, UIUtil.getReadableDate(share.getExpires())));
+        holder.item.shareSubtitleTextView.setText(share.getExpires() != null ? holder.itemView.getContext().getString(R.string.share_subtitle_item, UIUtil.getReadableDate(share.getExpires())) : "");
 
         if (share.getEntries() != null && !share.getEntries().isEmpty()) CustomGlideRequest.Builder
                 .from(holder.itemView.getContext(), share.getEntries().get(0).getCoverArtId(), CustomGlideRequest.ResourceType.Album)

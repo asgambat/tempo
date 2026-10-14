@@ -32,7 +32,6 @@ import com.cappielloantonio.tempo.util.Preferences;
 import com.cappielloantonio.tempo.viewmodel.LibraryViewModel;
 import com.google.android.material.appbar.MaterialToolbar;
 
-import java.util.Objects;
 
 @UnstableApi
 public class LibraryFragment extends Fragment implements ClickCallback {
@@ -126,7 +125,9 @@ public class LibraryFragment extends Fragment implements ClickCallback {
         materialToolbar = bind.getRoot().findViewById(R.id.toolbar);
 
         activity.setSupportActionBar(materialToolbar);
-        Objects.requireNonNull(materialToolbar.getOverflowIcon()).setTint(requireContext().getResources().getColor(R.color.titleTextColor, null));
+        if (materialToolbar.getOverflowIcon() != null) {
+            materialToolbar.getOverflowIcon().setTint(requireContext().getResources().getColor(R.color.titleTextColor, null));
+        }
     }
 
     private void initMusicFolderView() {

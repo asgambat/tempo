@@ -202,7 +202,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         localePref.setEntryValues(entryValues);
 
         localePref.setDefaultValue(entryValues[0]);
-        localePref.setSummary(Locale.forLanguageTag(localePref.getValue()).getDisplayLanguage());
+        localePref.setSummary(localePref.getValue() != null ? Locale.forLanguageTag(localePref.getValue()).getDisplayLanguage() : "");
 
         localePref.setOnPreferenceChangeListener((preference, newValue) -> {
             LocaleListCompat appLocale = LocaleListCompat.forLanguageTags((String) newValue);

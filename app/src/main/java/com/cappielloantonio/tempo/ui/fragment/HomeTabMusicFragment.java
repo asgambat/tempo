@@ -166,7 +166,7 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
             homeViewModel.getRandomShuffleSample().observe(getViewLifecycleOwner(), songs -> {
                 MusicUtil.ratingFilter(songs);
 
-                if (!songs.isEmpty()) {
+                if (songs != null && !songs.isEmpty()) {
                     MediaManager.startQueue(mediaBrowserListenableFuture, songs, 0);
                     activity.setBottomSheetInPeek(true);
                 }
@@ -923,7 +923,7 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
                 homeViewModel.getArtistInstantMix(getViewLifecycleOwner(), bundle.getParcelable(Constants.ARTIST_OBJECT)).observe(getViewLifecycleOwner(), songs -> {
                     MusicUtil.ratingFilter(songs);
 
-                    if (!songs.isEmpty()) {
+                    if (songs != null && !songs.isEmpty()) {
                         MediaManager.startQueue(mediaBrowserListenableFuture, songs, 0);
                         activity.setBottomSheetInPeek(true);
                     }
@@ -934,7 +934,7 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
                 homeViewModel.getArtistBestOf(getViewLifecycleOwner(), bundle.getParcelable(Constants.ARTIST_OBJECT)).observe(getViewLifecycleOwner(), songs -> {
                     MusicUtil.ratingFilter(songs);
 
-                    if (!songs.isEmpty()) {
+                    if (songs != null && !songs.isEmpty()) {
                         MediaManager.startQueue(mediaBrowserListenableFuture, songs, 0);
                         activity.setBottomSheetInPeek(true);
                     }
@@ -958,6 +958,11 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
     @Override
     public void onShareClick(Bundle bundle) {
         Share share = bundle.getParcelable(Constants.SHARE_OBJECT);
+
+        if (share == null || share.getUrl() == null) {
+            return;
+        }
+
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(share.getUrl())).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
     }

@@ -17,6 +17,7 @@ import com.cappielloantonio.tempo.util.Constants;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 
 public class AlbumListPageViewModel extends AndroidViewModel {
@@ -40,6 +41,10 @@ public class AlbumListPageViewModel extends AndroidViewModel {
     public LiveData<List<AlbumID3>> getAlbumList(LifecycleOwner owner) {
         albumList = new MutableLiveData<>(new ArrayList<>());
 
+        if (title == null) {
+            return albumList;
+        }
+
         switch (title) {
             case Constants.ALBUM_RECENTLY_PLAYED:
                 albumRepository.getAlbums("recent", maxNumber, null, null).observe(owner, albums -> albumList.setValue(albums));
@@ -56,7 +61,11 @@ public class AlbumListPageViewModel extends AndroidViewModel {
             case Constants.ALBUM_NEW_RELEASES:
                 int currentYear = Calendar.getInstance().get(Calendar.YEAR);
                 albumRepository.getAlbums("byYear", maxNumber, currentYear, currentYear).observe(owner, albums -> {
-                    albums.sort(Comparator.comparing(AlbumID3::getCreated).reversed());
+                    if (albums == null) {
+                        return;
+                    }
+
+                    albums.sort(Comparator.comparing((AlbumID3 album) -> album.getCreated() == null ? new Date(0) : album.getCreated()).reversed());
                     albumList.postValue(albums.subList(0, Math.min(20, albums.size())));
                 });
                 break;

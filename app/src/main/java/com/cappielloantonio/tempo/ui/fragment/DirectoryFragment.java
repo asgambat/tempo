@@ -107,7 +107,7 @@ public class DirectoryFragment extends Fragment implements ClickCallback {
                 @Override
                 public void onPositiveClick() {
                     directoryViewModel.loadMusicDirectory(getArguments().getString(Constants.MUSIC_DIRECTORY_ID)).observe(getViewLifecycleOwner(), directory -> {
-                        if (isVisible() && getActivity() != null) {
+                        if (isVisible() && getActivity() != null && directory != null && directory.getChildren() != null) {
                             List<Child> songs = directory.getChildren().stream().filter(child -> !child.isDir()).collect(Collectors.toList());
                             DownloadUtil.getDownloadTracker(requireContext()).download(
                                     MappingUtil.mapDownloads(songs),
@@ -147,6 +147,10 @@ public class DirectoryFragment extends Fragment implements ClickCallback {
         musicDirectoryAdapter = new MusicDirectoryAdapter(this);
         bind.directoryRecyclerView.setAdapter(musicDirectoryAdapter);
         directoryViewModel.loadMusicDirectory(getArguments().getString(Constants.MUSIC_DIRECTORY_ID)).observe(getViewLifecycleOwner(), directory -> {
+            if (directory == null) {
+                return;
+            }
+
             bind.appBarLayout.addOnOffsetChangedListener((appBarLayout, verticalOffset) -> {
                 if ((bind.directoryInfoSector.getHeight() + verticalOffset) < (2 * ViewCompat.getMinimumHeight(bind.toolbar))) {
                     bind.toolbar.setTitle(directory.getName());
@@ -159,13 +163,15 @@ public class DirectoryFragment extends Fragment implements ClickCallback {
 
             musicDirectoryAdapter.setItems(directory.getChildren());
 
-            menuItem.setVisible(
-                    directory.getChildren() != null && directory.getChildren()
-                            .stream()
-                            .filter(child -> !child.isDir())
-                            .findFirst()
-                            .orElse(null) != null
-            );
+            if (menuItem != null) {
+                menuItem.setVisible(
+                        directory.getChildren() != null && directory.getChildren()
+                                .stream()
+                                .filter(child -> !child.isDir())
+                                .findFirst()
+                                .orElse(null) != null
+                );
+            }
         });
     }
 

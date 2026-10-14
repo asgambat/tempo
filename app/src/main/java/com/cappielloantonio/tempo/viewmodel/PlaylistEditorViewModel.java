@@ -16,7 +16,6 @@ import com.cappielloantonio.tempo.subsonic.models.Share;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 public class PlaylistEditorViewModel extends AndroidViewModel {
     private static final String TAG = "PlaylistEditorViewModel";
@@ -76,7 +75,12 @@ public class PlaylistEditorViewModel extends AndroidViewModel {
 
     public void removeFromPlaylistSongLiveList(int position) {
         List<Child> songs = songLiveList.getValue();
-        Objects.requireNonNull(songs).remove(position);
+
+        if (songs == null || position < 0 || position >= songs.size()) {
+            return;
+        }
+
+        songs.remove(position);
         songLiveList.postValue(songs);
     }
 

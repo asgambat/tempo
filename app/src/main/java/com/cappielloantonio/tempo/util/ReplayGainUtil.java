@@ -142,20 +142,35 @@ public class ReplayGainUtil {
     }
 
     private static void setTrackReplayGain(ExoPlayer player, List<ReplayGain> gains) {
-        float trackGain = gains.get(0).getTrackGain() != 0f ? gains.get(0).getTrackGain() : gains.get(1).getTrackGain();
+        if (gains == null || gains.isEmpty()) {
+            setNoReplayGain(player);
+            return;
+        }
+
+        float trackGain = gains.get(0).getTrackGain() != 0f ? gains.get(0).getTrackGain() : (gains.size() > 1 ? gains.get(1).getTrackGain() : 0f);
 
         setReplayGain(player, trackGain != 0f ? trackGain : 0f);
     }
 
     private static void setAlbumReplayGain(ExoPlayer player, List<ReplayGain> gains) {
-        float albumGain = gains.get(0).getAlbumGain() != 0f ? gains.get(0).getAlbumGain() : gains.get(1).getAlbumGain();
+        if (gains == null || gains.isEmpty()) {
+            setNoReplayGain(player);
+            return;
+        }
+
+        float albumGain = gains.get(0).getAlbumGain() != 0f ? gains.get(0).getAlbumGain() : (gains.size() > 1 ? gains.get(1).getAlbumGain() : 0f);
 
         setReplayGain(player, albumGain != 0f ? albumGain : 0f);
     }
 
     private static void setAutoReplayGain(ExoPlayer player, List<ReplayGain> gains) {
-        float albumGain = gains.get(0).getAlbumGain() != 0f ? gains.get(0).getAlbumGain() : gains.get(1).getAlbumGain();
-        float trackGain = gains.get(0).getTrackGain() != 0f ? gains.get(0).getTrackGain() : gains.get(1).getTrackGain();
+        if (gains == null || gains.isEmpty()) {
+            setNoReplayGain(player);
+            return;
+        }
+
+        float albumGain = gains.get(0).getAlbumGain() != 0f ? gains.get(0).getAlbumGain() : (gains.size() > 1 ? gains.get(1).getAlbumGain() : 0f);
+        float trackGain = gains.get(0).getTrackGain() != 0f ? gains.get(0).getTrackGain() : (gains.size() > 1 ? gains.get(1).getTrackGain() : 0f);
 
         setReplayGain(player, albumGain != 0f ? albumGain : trackGain);
     }

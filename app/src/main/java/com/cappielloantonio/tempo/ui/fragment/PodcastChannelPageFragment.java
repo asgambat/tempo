@@ -90,12 +90,20 @@ public class PodcastChannelPageFragment extends Fragment implements ClickCallbac
             activity.getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
 
-        bind.toolbar.setTitle(podcastChannelPageViewModel.getPodcastChannel().getTitle());
+        if (podcastChannelPageViewModel.getPodcastChannel() != null) {
+            bind.toolbar.setTitle(podcastChannelPageViewModel.getPodcastChannel().getTitle());
+        }
         bind.toolbar.setNavigationOnClickListener(v -> activity.navController.navigateUp());
-        bind.toolbar.setTitle(podcastChannelPageViewModel.getPodcastChannel().getTitle());
+        if (podcastChannelPageViewModel.getPodcastChannel() != null) {
+            bind.toolbar.setTitle(podcastChannelPageViewModel.getPodcastChannel().getTitle());
+        }
     }
 
     private void initPodcastChannelInfo() {
+        if (podcastChannelPageViewModel.getPodcastChannel() == null) {
+            return;
+        }
+
         String normalizePodcastChannelDescription = MusicUtil.forceReadableString(podcastChannelPageViewModel.getPodcastChannel().getDescription());
 
         if (bind != null) {

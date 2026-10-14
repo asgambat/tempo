@@ -20,7 +20,6 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
-import java.util.Objects;
 
 @UnstableApi
 public class HomeFragment extends Fragment {
@@ -68,7 +67,9 @@ public class HomeFragment extends Fragment {
         materialToolbar = bind.getRoot().findViewById(R.id.toolbar);
 
         activity.setSupportActionBar(materialToolbar);
-        Objects.requireNonNull(materialToolbar.getOverflowIcon()).setTint(requireContext().getResources().getColor(R.color.titleTextColor, null));
+        if (materialToolbar.getOverflowIcon() != null) {
+            materialToolbar.getOverflowIcon().setTint(requireContext().getResources().getColor(R.color.titleTextColor, null));
+        }
 
         tabLayout = new TabLayout(requireContext());
         tabLayout.setTabGravity(TabLayout.GRAVITY_FILL);

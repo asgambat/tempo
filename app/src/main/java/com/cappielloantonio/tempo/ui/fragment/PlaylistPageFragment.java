@@ -41,7 +41,6 @@ import com.cappielloantonio.tempo.viewmodel.PlaylistPageViewModel;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.Collections;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @UnstableApi
@@ -127,7 +126,7 @@ public class PlaylistPageFragment extends Fragment implements ClickCallback {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.action_download_playlist) {
             playlistPageViewModel.getPlaylistSongLiveList().observe(getViewLifecycleOwner(), songs -> {
-                if (isVisible() && getActivity() != null) {
+                if (isVisible() && getActivity() != null && songs != null) {
                     DownloadUtil.getDownloadTracker(requireContext()).download(
                             MappingUtil.mapDownloads(songs),
                             songs.stream().map(child -> {
@@ -157,8 +156,11 @@ public class PlaylistPageFragment extends Fragment implements ClickCallback {
 
     private void initMenuOption(Menu menu) {
         playlistPageViewModel.isPinned(getViewLifecycleOwner()).observe(getViewLifecycleOwner(), isPinned -> {
-            menu.findItem(R.id.action_unpin_playlist).setVisible(isPinned);
-            menu.findItem(R.id.action_pin_playlist).setVisible(!isPinned);
+            MenuItem unpinItem = menu.findItem(R.id.action_unpin_playlist);
+            MenuItem pinItem = menu.findItem(R.id.action_pin_playlist);
+
+            if (unpinItem != null) unpinItem.setVisible(isPinned);
+            if (pinItem != null) pinItem.setVisible(!isPinned);
         });
     }
 
@@ -181,7 +183,9 @@ public class PlaylistPageFragment extends Fragment implements ClickCallback {
             activity.navController.navigateUp();
         });
 
-        Objects.requireNonNull(bind.animToolbar.getOverflowIcon()).setTint(requireContext().getResources().getColor(R.color.titleTextColor, null));
+        if (bind.animToolbar.getOverflowIcon() != null) {
+            bind.animToolbar.getOverflowIcon().setTint(requireContext().getResources().getColor(R.color.titleTextColor, null));
+        }
     }
 
     private void hideKeyboard(View view) {
@@ -191,7 +195,7 @@ public class PlaylistPageFragment extends Fragment implements ClickCallback {
 
     private void initMusicButton() {
         playlistPageViewModel.getPlaylistSongLiveList().observe(getViewLifecycleOwner(), songs -> {
-            if (bind != null) {
+            if (bind != null && songs != null) {
                 bind.playlistPagePlayButton.setOnClickListener(v -> {
                     MediaManager.startQueue(mediaBrowserListenableFuture, songs.subList(0, Math.min(100, songs.size())), 0);
                     activity.setBottomSheetInPeek(true);

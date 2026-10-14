@@ -48,25 +48,35 @@ public class ShareBottomSheetDialog extends BottomSheetDialogFragment implements
     }
 
     private void init(View view) {
+        if (share == null) {
+            dismissBottomSheet();
+            return;
+        }
+
         ImageView shareCover = view.findViewById(R.id.share_cover_image_view);
 
         CustomGlideRequest.Builder
-                .from(requireContext(), shareBottomSheetViewModel.getShare().getEntries().get(0).getCoverArtId(), CustomGlideRequest.ResourceType.Unknown)
+                .from(requireContext(), share.getEntries() != null && !share.getEntries().isEmpty() ? share.getEntries().get(0).getCoverArtId() : null, CustomGlideRequest.ResourceType.Unknown)
                 .build()
                 .into(shareCover);
 
         TextView shareTitle = view.findViewById(R.id.share_title_text_view);
-        shareTitle.setText(shareBottomSheetViewModel.getShare().getDescription());
+        shareTitle.setText(share.getDescription());
         shareTitle.setSelected(true);
 
         TextView shareSubtitle = view.findViewById(R.id.share_subtitle_text_view);
-        shareSubtitle.setText(requireContext().getString(R.string.share_subtitle_item, UIUtil.getReadableDate(share.getExpires())));
+        shareSubtitle.setText(share.getExpires() != null ? requireContext().getString(R.string.share_subtitle_item, UIUtil.getReadableDate(share.getExpires())) : "");
         shareSubtitle.setSelected(true);
 
         TextView copyLink = view.findViewById(R.id.copy_link_text_view);
         copyLink.setOnClickListener(v -> {
+            if (share.getUrl() == null) {
+                dismissBottomSheet();
+                return;
+            }
+
             ClipboardManager clipboardManager = (ClipboardManager) requireActivity().getSystemService(Context.CLIPBOARD_SERVICE);
-            ClipData clipData = ClipData.newPlainText(getString(R.string.app_name), shareBottomSheetViewModel.getShare().getUrl());
+            ClipData clipData = ClipData.newPlainText(getString(R.string.app_name), share.getUrl());
             clipboardManager.setPrimaryClip(clipData);
             dismissBottomSheet();
         });

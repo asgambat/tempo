@@ -36,11 +36,13 @@ public class ArtistCatalogueViewModel extends AndroidViewModel {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull retrofit2.Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getArtists() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getArtists() != null && response.body().getSubsonicResponse().getArtists().getIndices() != null) {
                             List<ArtistID3> artists = new ArrayList<>();
 
                             for (IndexID3 index : response.body().getSubsonicResponse().getArtists().getIndices()) {
-                                artists.addAll(index.getArtists());
+                                if (index != null && index.getArtists() != null) {
+                                    artists.addAll(index.getArtists());
+                                }
                             }
 
                             artistList.setValue(artists);

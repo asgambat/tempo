@@ -112,13 +112,13 @@ public class SongListPageFragment extends Fragment implements ClickCallback {
         } else if (requireArguments().getString(Constants.MEDIA_BY_GENRE) != null) {
             songListPageViewModel.title = Constants.MEDIA_BY_GENRE;
             songListPageViewModel.genre = requireArguments().getParcelable(Constants.GENRE_OBJECT);
-            songListPageViewModel.toolbarTitle = songListPageViewModel.genre.getGenre();
-            bind.pageTitleLabel.setText(songListPageViewModel.genre.getGenre());
+            songListPageViewModel.toolbarTitle = songListPageViewModel.genre != null ? songListPageViewModel.genre.getGenre() : "";
+            bind.pageTitleLabel.setText(songListPageViewModel.toolbarTitle);
         } else if (requireArguments().getString(Constants.MEDIA_BY_ARTIST) != null) {
             songListPageViewModel.title = Constants.MEDIA_BY_ARTIST;
             songListPageViewModel.artist = requireArguments().getParcelable(Constants.ARTIST_OBJECT);
-            songListPageViewModel.toolbarTitle = getString(R.string.song_list_page_top, songListPageViewModel.artist.getName());
-            bind.pageTitleLabel.setText(getString(R.string.song_list_page_top, songListPageViewModel.artist.getName()));
+            songListPageViewModel.toolbarTitle = songListPageViewModel.artist != null ? getString(R.string.song_list_page_top, songListPageViewModel.artist.getName()) : "";
+            bind.pageTitleLabel.setText(songListPageViewModel.toolbarTitle);
         } else if (requireArguments().getString(Constants.MEDIA_BY_GENRES) != null) {
             songListPageViewModel.title = Constants.MEDIA_BY_GENRES;
             songListPageViewModel.filters = requireArguments().getStringArrayList("filters_list");
@@ -172,7 +172,7 @@ public class SongListPageFragment extends Fragment implements ClickCallback {
 
     private void initButtons() {
         songListPageViewModel.getSongList().observe(getViewLifecycleOwner(), songs -> {
-            if (bind != null) {
+            if (bind != null && songs != null) {
                 setSongListPageSorter();
 
                 bind.songListShuffleImageView.setOnClickListener(v -> {
@@ -271,6 +271,10 @@ public class SongListPageFragment extends Fragment implements ClickCallback {
     }
 
     private void setSongListPageSubtitle(List<Child> children) {
+        if (children == null || songListPageViewModel.title == null) {
+            return;
+        }
+
         switch (songListPageViewModel.title) {
             case Constants.MEDIA_BY_GENRE:
                 bind.pageSubtitleLabel.setText(children.size() < songListPageViewModel.maxNumberByGenre ?
@@ -293,6 +297,10 @@ public class SongListPageFragment extends Fragment implements ClickCallback {
     }
 
     private void setSongListPageSorter() {
+        if (songListPageViewModel.title == null) {
+            return;
+        }
+
         switch (songListPageViewModel.title) {
             case Constants.MEDIA_BY_GENRE:
             case Constants.MEDIA_BY_YEAR:

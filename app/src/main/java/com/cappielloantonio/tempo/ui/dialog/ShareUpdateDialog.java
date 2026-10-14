@@ -74,6 +74,11 @@ public class ShareUpdateDialog extends DialogFragment {
     }
 
     private void setShareCalendar() {
+        if (shareBottomSheetViewModel.getShare() == null || shareBottomSheetViewModel.getShare().getExpires() == null) {
+            dismissAllowingStateLoss();
+            return;
+        }
+
         expiration = shareBottomSheetViewModel.getShare().getExpires().getTime();
 
         bind.shareExpirationTextView.setText(UIUtil.getReadableDate(new Date(expiration)));

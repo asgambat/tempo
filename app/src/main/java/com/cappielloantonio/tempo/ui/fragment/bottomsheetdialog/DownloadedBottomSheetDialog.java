@@ -50,6 +50,11 @@ public class DownloadedBottomSheetDialog extends BottomSheetDialogFragment imple
         groupTitle = this.requireArguments().getString(Constants.DOWNLOAD_GROUP_TITLE);
         groupSubtitle = this.requireArguments().getString(Constants.DOWNLOAD_GROUP_SUBTITLE);
 
+        if (songs == null || songs.isEmpty()) {
+            dismissAllowingStateLoss();
+            return view;
+        }
+
         initUI(view);
         init(view);
 

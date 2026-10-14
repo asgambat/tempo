@@ -35,7 +35,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 @UnstableApi
 public class DownloadFragment extends Fragment implements ClickCallback {
@@ -96,7 +95,9 @@ public class DownloadFragment extends Fragment implements ClickCallback {
         materialToolbar = bind.getRoot().findViewById(R.id.toolbar);
 
         activity.setSupportActionBar(materialToolbar);
-        Objects.requireNonNull(materialToolbar.getOverflowIcon()).setTint(requireContext().getResources().getColor(R.color.titleTextColor, null));
+        if (materialToolbar.getOverflowIcon() != null) {
+            materialToolbar.getOverflowIcon().setTint(requireContext().getResources().getColor(R.color.titleTextColor, null));
+        }
     }
 
     private void initDownloadedView() {

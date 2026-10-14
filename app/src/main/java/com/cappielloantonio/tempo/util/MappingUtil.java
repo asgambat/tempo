@@ -25,6 +25,10 @@ public class MappingUtil {
     public static List<MediaItem> mapMediaItems(List<Child> items) {
         ArrayList<MediaItem> mediaItems = new ArrayList<>();
 
+        if (items == null) {
+            return mediaItems;
+        }
+
         for (int i = 0; i < items.size(); i++) {
             mediaItems.add(mapMediaItem(items.get(i)));
         }
@@ -99,6 +103,10 @@ public class MappingUtil {
 
     public static List<MediaItem> mapDownloads(List<Child> items) {
         ArrayList<MediaItem> downloads = new ArrayList<>();
+
+        if (items == null) {
+            return downloads;
+        }
 
         for (int i = 0; i < items.size(); i++) {
             downloads.add(mapDownload(items.get(i)));

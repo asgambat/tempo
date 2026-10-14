@@ -29,6 +29,7 @@ import com.cappielloantonio.tempo.interfaces.ClickCallback;
 import com.cappielloantonio.tempo.model.Download;
 import com.cappielloantonio.tempo.service.MediaManager;
 import com.cappielloantonio.tempo.service.MediaService;
+import com.cappielloantonio.tempo.subsonic.models.AlbumID3;
 import com.cappielloantonio.tempo.ui.activity.MainActivity;
 import com.cappielloantonio.tempo.ui.adapter.SongHorizontalAdapter;
 import com.cappielloantonio.tempo.util.Constants;
@@ -104,7 +105,9 @@ public class AlbumPageFragment extends Fragment implements ClickCallback {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.action_download_album) {
             albumPageViewModel.getAlbumSongLiveList().observe(getViewLifecycleOwner(), songs -> {
-                DownloadUtil.getDownloadTracker(requireContext()).download(MappingUtil.mapDownloads(songs), songs.stream().map(Download::new).collect(Collectors.toList()));
+                if (songs != null) {
+                    DownloadUtil.getDownloadTracker(requireContext()).download(MappingUtil.mapDownloads(songs), songs.stream().map(Download::new).collect(Collectors.toList()));
+                }
             });
             return true;
         }
@@ -113,7 +116,13 @@ public class AlbumPageFragment extends Fragment implements ClickCallback {
     }
 
     private void init() {
-        albumPageViewModel.setAlbum(getViewLifecycleOwner(), requireArguments().getParcelable(Constants.ALBUM_OBJECT));
+        AlbumID3 album = requireArguments().getParcelable(Constants.ALBUM_OBJECT);
+
+        if (album == null) {
+            return;
+        }
+
+        albumPageViewModel.setAlbum(getViewLifecycleOwner(), album);
     }
 
     private void initAppBar() {
@@ -155,7 +164,9 @@ public class AlbumPageFragment extends Fragment implements ClickCallback {
 
         bind.animToolbar.setNavigationOnClickListener(v -> activity.navController.navigateUp());
 
-        Objects.requireNonNull(bind.animToolbar.getOverflowIcon()).setTint(requireContext().getResources().getColor(R.color.titleTextColor, null));
+        if (bind.animToolbar.getOverflowIcon() != null) {
+            bind.animToolbar.getOverflowIcon().setTint(requireContext().getResources().getColor(R.color.titleTextColor, null));
+        }
 
         bind.albumOtherInfoButton.setOnClickListener(v -> {
             if (bind.albumDetailView.getVisibility() == View.GONE) {

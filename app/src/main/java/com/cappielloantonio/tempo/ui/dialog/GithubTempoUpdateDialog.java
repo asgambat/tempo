@@ -15,13 +15,16 @@ import com.cappielloantonio.tempo.github.models.LatestRelease;
 import com.cappielloantonio.tempo.util.Preferences;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
-import java.util.Objects;
-
 public class GithubTempoUpdateDialog extends DialogFragment {
-    private final LatestRelease latestRelease;
+    private static final String ARG_HTML_URL = "html_url";
+
+    public GithubTempoUpdateDialog() {
+    }
 
     public GithubTempoUpdateDialog(LatestRelease latestRelease) {
-        this.latestRelease = latestRelease;
+        Bundle args = new Bundle();
+        args.putString(ARG_HTML_URL, latestRelease != null ? latestRelease.getHtmlUrl() : null);
+        setArguments(args);
     }
 
     @NonNull
@@ -47,21 +50,29 @@ public class GithubTempoUpdateDialog extends DialogFragment {
     }
 
     private void setButtonAction() {
-        AlertDialog alertDialog = (AlertDialog) Objects.requireNonNull(getDialog());
+        AlertDialog alertDialog = (AlertDialog) getDialog();
+
+        if (alertDialog == null) {
+            return;
+        }
+
+        String htmlUrl = requireArguments().getString(ARG_HTML_URL);
 
         alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-            openLink(latestRelease.getHtmlUrl());
-            Objects.requireNonNull(getDialog()).dismiss();
+            if (htmlUrl != null) {
+                openLink(htmlUrl);
+            }
+            alertDialog.dismiss();
         });
 
         alertDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(v -> {
             Preferences.setTempoUpdateReminder();
-            Objects.requireNonNull(getDialog()).dismiss();
+            alertDialog.dismiss();
         });
 
         alertDialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
             openLink(getString(R.string.support_url));
-            Objects.requireNonNull(getDialog()).dismiss();
+            alertDialog.dismiss();
         });
     }
 

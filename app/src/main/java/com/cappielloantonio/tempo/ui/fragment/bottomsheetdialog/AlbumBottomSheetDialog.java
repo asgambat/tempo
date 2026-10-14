@@ -117,7 +117,7 @@ public class AlbumBottomSheetDialog extends BottomSheetDialogFragment implements
                 public void onLoadMedia(List<?> media) {
                     MusicUtil.ratingFilter((ArrayList<Child>) media);
 
-                    if (!media.isEmpty()) {
+                    if (media != null && !media.isEmpty()) {
                         MediaManager.startQueue(mediaBrowserListenableFuture, (ArrayList<Child>) media, 0);
                         ((MainActivity) requireActivity()).setBottomSheetInPeek(true);
                     }

@@ -110,12 +110,18 @@ public class ArtistPageFragment extends Fragment implements ClickCallback {
         if (activity.getSupportActionBar() != null)
             activity.getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        bind.collapsingToolbar.setTitle(artistPageViewModel.getArtist().getName());
+        if (artistPageViewModel.getArtist() != null) {
+            bind.collapsingToolbar.setTitle(artistPageViewModel.getArtist().getName());
+        }
         bind.animToolbar.setNavigationOnClickListener(v -> activity.navController.navigateUp());
         bind.collapsingToolbar.setExpandedTitleColor(getResources().getColor(R.color.white, null));
     }
 
     private void initArtistInfo() {
+        if (artistPageViewModel.getArtist() == null) {
+            return;
+        }
+
         artistPageViewModel.getArtistInfo(artistPageViewModel.getArtist().getId()).observe(getViewLifecycleOwner(), artistInfo -> {
             if (artistInfo == null) {
                 if (bind != null) bind.artistPageBioSector.setVisibility(View.GONE);
@@ -148,7 +154,7 @@ public class ArtistPageFragment extends Fragment implements ClickCallback {
     private void initPlayButtons() {
         bind.artistPageShuffleButton.setOnClickListener(v -> {
             artistPageViewModel.getArtistShuffleList().observe(getViewLifecycleOwner(), songs -> {
-                if (!songs.isEmpty()) {
+                if (songs != null && !songs.isEmpty()) {
                     MediaManager.startQueue(mediaBrowserListenableFuture, songs, 0);
                     activity.setBottomSheetInPeek(true);
                 } else {
@@ -159,7 +165,7 @@ public class ArtistPageFragment extends Fragment implements ClickCallback {
 
         bind.artistPageRadioButton.setOnClickListener(v -> {
             artistPageViewModel.getArtistInstantMix().observe(getViewLifecycleOwner(), songs -> {
-                if (!songs.isEmpty()) {
+                if (songs != null && !songs.isEmpty()) {
                     MediaManager.startQueue(mediaBrowserListenableFuture, songs, 0);
                     activity.setBottomSheetInPeek(true);
                 } else {

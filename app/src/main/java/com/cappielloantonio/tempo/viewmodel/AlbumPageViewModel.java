@@ -39,6 +39,10 @@ public class AlbumPageViewModel extends AndroidViewModel {
     }
 
     public void setAlbum(LifecycleOwner owner, AlbumID3 album) {
+        if (album == null) {
+            return;
+        }
+
         this.albumId = album.getId();
         this.album.postValue(album);
 

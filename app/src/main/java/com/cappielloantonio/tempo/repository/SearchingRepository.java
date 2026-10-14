@@ -34,7 +34,7 @@ public class SearchingRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null) {
                             result.setValue(response.body().getSubsonicResponse().getSearchResult2());
                         }
                     }
@@ -57,7 +57,7 @@ public class SearchingRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null) {
                             result.setValue(response.body().getSubsonicResponse().getSearchResult3());
                         }
                     }
@@ -82,7 +82,7 @@ public class SearchingRepository {
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
                         List<String> newSuggestions = new ArrayList();
 
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getSearchResult3() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getSearchResult3() != null) {
                             if (response.body().getSubsonicResponse().getSearchResult3().getArtists() != null) {
                                 for (ArtistID3 artistID3 : response.body().getSubsonicResponse().getSearchResult3().getArtists()) {
                                     newSuggestions.add(artistID3.getName());

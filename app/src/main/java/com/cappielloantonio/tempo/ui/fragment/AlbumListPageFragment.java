@@ -125,7 +125,7 @@ public class AlbumListPageFragment extends Fragment implements ClickCallback {
 
         albumHorizontalAdapter = new AlbumHorizontalAdapter(
                 this,
-                (albumListPageViewModel.title.equals(Constants.ALBUM_DOWNLOADED) || albumListPageViewModel.title.equals(Constants.ALBUM_FROM_ARTIST))
+                (Constants.ALBUM_DOWNLOADED.equals(albumListPageViewModel.title) || Constants.ALBUM_FROM_ARTIST.equals(albumListPageViewModel.title))
         );
 
         bind.albumListRecyclerView.setAdapter(albumHorizontalAdapter);
@@ -196,6 +196,10 @@ public class AlbumListPageFragment extends Fragment implements ClickCallback {
     }
 
     private void setAlbumListPageSubtitle(List<AlbumID3> albums) {
+        if (albums == null || albumListPageViewModel.title == null) {
+            return;
+        }
+
         switch (albumListPageViewModel.title) {
             case Constants.ALBUM_RECENTLY_PLAYED:
             case Constants.ALBUM_MOST_PLAYED:
@@ -212,6 +216,10 @@ public class AlbumListPageFragment extends Fragment implements ClickCallback {
     }
 
     private void setAlbumListPageSorter() {
+        if (albumListPageViewModel.title == null) {
+            return;
+        }
+
         switch (albumListPageViewModel.title) {
             case Constants.ALBUM_RECENTLY_PLAYED:
             case Constants.ALBUM_MOST_PLAYED:

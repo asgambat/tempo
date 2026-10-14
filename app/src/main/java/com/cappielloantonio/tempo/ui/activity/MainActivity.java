@@ -16,6 +16,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.Player;
 import androidx.media3.common.util.UnstableApi;
 import androidx.navigation.NavController;
+import androidx.navigation.NavDestination;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 
@@ -270,11 +271,17 @@ public class MainActivity extends BaseActivity {
         setBottomNavigationBarVisibility(false);
         setBottomSheetVisibility(false);
 
-        if (Objects.requireNonNull(navController.getCurrentDestination()).getId() == R.id.landingFragment) {
+        NavDestination currentDestination = navController.getCurrentDestination();
+
+        if (currentDestination == null) {
+            return;
+        }
+
+        if (currentDestination.getId() == R.id.landingFragment) {
             navController.navigate(R.id.action_landingFragment_to_loginFragment);
-        } else if (Objects.requireNonNull(navController.getCurrentDestination()).getId() == R.id.settingsFragment) {
+        } else if (currentDestination.getId() == R.id.settingsFragment) {
             navController.navigate(R.id.action_settingsFragment_to_loginFragment);
-        } else if (Objects.requireNonNull(navController.getCurrentDestination()).getId() == R.id.homeFragment) {
+        } else if (currentDestination.getId() == R.id.homeFragment) {
             navController.navigate(R.id.action_homeFragment_to_loginFragment);
         }
     }
@@ -282,9 +289,15 @@ public class MainActivity extends BaseActivity {
     private void goToHome() {
         bottomNavigationView.setVisibility(View.VISIBLE);
 
-        if (Objects.requireNonNull(navController.getCurrentDestination()).getId() == R.id.landingFragment) {
+        NavDestination currentDestination = navController.getCurrentDestination();
+
+        if (currentDestination == null) {
+            return;
+        }
+
+        if (currentDestination.getId() == R.id.landingFragment) {
             navController.navigate(R.id.action_landingFragment_to_homeFragment);
-        } else if (Objects.requireNonNull(navController.getCurrentDestination()).getId() == R.id.loginFragment) {
+        } else if (currentDestination.getId() == R.id.loginFragment) {
             navController.navigate(R.id.action_loginFragment_to_homeFragment);
         }
     }

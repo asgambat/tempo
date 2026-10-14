@@ -49,12 +49,16 @@ public class SongListPageViewModel extends AndroidViewModel {
     public LiveData<List<Child>> getSongList() {
         songList = new MutableLiveData<>(new ArrayList<>());
 
+        if (title == null) {
+            return songList;
+        }
+
         switch (title) {
             case Constants.MEDIA_BY_GENRE:
-                songList = songRepository.getSongsByGenre(genre.getGenre(), 0);
+                if (genre != null) songList = songRepository.getSongsByGenre(genre.getGenre(), 0);
                 break;
             case Constants.MEDIA_BY_ARTIST:
-                songList = artistRepository.getTopSongs(artist.getName(), 50);
+                if (artist != null) songList = artistRepository.getTopSongs(artist.getName(), 50);
                 break;
             case Constants.MEDIA_BY_GENRES:
                 songList = songRepository.getSongsByGenres(filters);
@@ -71,8 +75,16 @@ public class SongListPageViewModel extends AndroidViewModel {
     }
 
     public void getSongsByPage(LifecycleOwner owner) {
+        if (title == null) {
+            return;
+        }
+
         switch (title) {
             case Constants.MEDIA_BY_GENRE:
+                if (genre == null) {
+                    break;
+                }
+
                 int songCount = songList.getValue() != null ? songList.getValue().size() : 0;
 
                 if (songCount > 0 && songCount % maxNumberByGenre != 0) return;

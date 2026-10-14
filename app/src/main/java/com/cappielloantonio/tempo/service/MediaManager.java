@@ -86,7 +86,7 @@ public class MediaManager {
     }
 
     public static void init(ListenableFuture<MediaBrowser> mediaBrowserListenableFuture, List<Child> media) {
-        if (mediaBrowserListenableFuture != null) {
+        if (mediaBrowserListenableFuture != null && media != null) {
             mediaBrowserListenableFuture.addListener(() -> {
                 try {
                     if (mediaBrowserListenableFuture.isDone()) {
@@ -103,7 +103,7 @@ public class MediaManager {
     }
 
     public static void startQueue(ListenableFuture<MediaBrowser> mediaBrowserListenableFuture, List<Child> media, int startIndex) {
-        if (mediaBrowserListenableFuture != null) {
+        if (mediaBrowserListenableFuture != null && media != null) {
             mediaBrowserListenableFuture.addListener(() -> {
                 try {
                     if (mediaBrowserListenableFuture.isDone()) {
@@ -174,7 +174,7 @@ public class MediaManager {
     }
 
     public static void enqueue(ListenableFuture<MediaBrowser> mediaBrowserListenableFuture, List<Child> media, boolean playImmediatelyAfter) {
-        if (mediaBrowserListenableFuture != null) {
+        if (mediaBrowserListenableFuture != null && media != null) {
             mediaBrowserListenableFuture.addListener(() -> {
                 try {
                     if (mediaBrowserListenableFuture.isDone()) {
@@ -214,7 +214,7 @@ public class MediaManager {
     }
 
     public static void shuffle(ListenableFuture<MediaBrowser> mediaBrowserListenableFuture, List<Child> media, int startIndex, int endIndex) {
-        if (mediaBrowserListenableFuture != null) {
+        if (mediaBrowserListenableFuture != null && media != null) {
             mediaBrowserListenableFuture.addListener(() -> {
                 try {
                     if (mediaBrowserListenableFuture.isDone()) {
