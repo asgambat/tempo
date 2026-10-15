@@ -15,6 +15,7 @@ import com.cappielloantonio.tempo.model.HomeSector;
 import com.cappielloantonio.tempo.repository.AlbumRepository;
 import com.cappielloantonio.tempo.repository.ArtistRepository;
 import com.cappielloantonio.tempo.repository.ChronologyRepository;
+import com.cappielloantonio.tempo.repository.DirectoryRepository;
 import com.cappielloantonio.tempo.repository.FavoriteRepository;
 import com.cappielloantonio.tempo.repository.PlaylistRepository;
 import com.cappielloantonio.tempo.repository.SharingRepository;
@@ -22,6 +23,7 @@ import com.cappielloantonio.tempo.repository.SongRepository;
 import com.cappielloantonio.tempo.subsonic.models.AlbumID3;
 import com.cappielloantonio.tempo.subsonic.models.ArtistID3;
 import com.cappielloantonio.tempo.subsonic.models.Child;
+import com.cappielloantonio.tempo.subsonic.models.MusicFolder;
 import com.cappielloantonio.tempo.subsonic.models.Playlist;
 import com.cappielloantonio.tempo.subsonic.models.Share;
 import com.cappielloantonio.tempo.util.Preferences;
@@ -44,10 +46,11 @@ public class HomeViewModel extends AndroidViewModel {
     private final ArtistRepository artistRepository;
     private final ChronologyRepository chronologyRepository;
     private final FavoriteRepository favoriteRepository;
+    private final DirectoryRepository directoryRepository;
     private final PlaylistRepository playlistRepository;
     private final SharingRepository sharingRepository;
 
-    private final MutableLiveData<List<HomeSector>> favoriteFolderSector = new MutableLiveData<>(null);
+    private final MutableLiveData<List<MusicFolder>> favoriteFolderSector = new MutableLiveData<>(null);
     private final MutableLiveData<List<Child>> dicoverSongSample = new MutableLiveData<>(null);
     private final MutableLiveData<List<AlbumID3>> newReleasedAlbum = new MutableLiveData<>(null);
     private final MutableLiveData<List<Child>> starredTracksSample = new MutableLiveData<>(null);
@@ -80,6 +83,7 @@ public class HomeViewModel extends AndroidViewModel {
         artistRepository = new ArtistRepository();
         chronologyRepository = new ChronologyRepository();
         favoriteRepository = new FavoriteRepository();
+        directoryRepository = new DirectoryRepository();
         playlistRepository = new PlaylistRepository();
         sharingRepository = new SharingRepository();
 
@@ -167,9 +171,9 @@ public class HomeViewModel extends AndroidViewModel {
         return starredAlbums;
     }
 
-    public LiveData<List<HomeSector>> getFavoriteFolderSector(LifecycleOwner owner) {
+    public LiveData<List<MusicFolder>> getFavoriteFolderSector(LifecycleOwner owner) {
         if (favoriteFolderSector.getValue() == null) {
-            favoriteRepository.getFavoriteFolders().observe(owner, favoriteFolderSector::postValue);
+            refreshFavoriteFolder(owner);
         }
 
         return favoriteFolderSector;
@@ -335,7 +339,21 @@ public class HomeViewModel extends AndroidViewModel {
     }
 
     public void refreshFavoriteFolder(LifecycleOwner owner) {
-        favoriteRepository.getFavoriteFolders().observe(owner, favoriteFolderSector::postValue);
+        List<String> folderIds = favoriteRepository.getFavoriteFolderIds();
+
+        directoryRepository.getMusicFolders().observe(owner, folders -> {
+            List<MusicFolder> result = new ArrayList<>();
+
+            if (folders != null) {
+                for (MusicFolder folder : folders) {
+                    if (folder.getId() != null && folderIds.contains(folder.getId())) {
+                        result.add(folder);
+                    }
+                }
+            }
+
+            favoriteFolderSector.setValue(result);
+        });
     }
 
     public void refreshShares(LifecycleOwner owner) {

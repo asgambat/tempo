@@ -21,6 +21,7 @@ import androidx.media3.session.SessionToken;
 
 import com.cappielloantonio.tempo.databinding.InnerFragmentPlayerCoverBinding;
 import com.cappielloantonio.tempo.glide.CustomGlideRequest;
+import com.cappielloantonio.tempo.interfaces.MediaIndexCallback;
 import com.cappielloantonio.tempo.model.Download;
 import com.cappielloantonio.tempo.service.MediaManager;
 import com.cappielloantonio.tempo.service.MediaService;
@@ -139,14 +140,9 @@ public class PlayerCoverFragment extends Fragment {
                 bind.innerButtonBottomRight.setOnClickListener(view -> {
                     MediaManager.getCurrentPosition(mediaBrowserListenableFuture, new MediaIndexCallback() {
                         @Override
-                        public void onRecovery(int index) {
-                            // fallback if onPositionRecovery not called
-                            playerBottomSheetViewModel.savePlayQueue(0L);
-                        }
-
-                        @Override
                         public void onPositionRecovery(long positionMs) {
                             playerBottomSheetViewModel.savePlayQueue(positionMs);
+                            Snackbar.make(requireView(), "Salvato", Snackbar.LENGTH_LONG).show();
                         }
                     });
                 });

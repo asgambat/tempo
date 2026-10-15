@@ -38,6 +38,7 @@ import com.cappielloantonio.tempo.service.DownloaderManager;
 import com.cappielloantonio.tempo.service.MediaManager;
 import com.cappielloantonio.tempo.service.MediaService;
 import com.cappielloantonio.tempo.subsonic.models.Child;
+import com.cappielloantonio.tempo.subsonic.models.MusicFolder;
 import com.cappielloantonio.tempo.subsonic.models.Share;
 import com.cappielloantonio.tempo.ui.activity.MainActivity;
 import com.cappielloantonio.tempo.ui.adapter.AlbumAdapter;
@@ -45,6 +46,7 @@ import com.cappielloantonio.tempo.ui.adapter.AlbumHorizontalAdapter;
 import com.cappielloantonio.tempo.ui.adapter.ArtistAdapter;
 import com.cappielloantonio.tempo.ui.adapter.ArtistHorizontalAdapter;
 import com.cappielloantonio.tempo.ui.adapter.DiscoverSongAdapter;
+import com.cappielloantonio.tempo.ui.adapter.MusicFolderAdapter;
 import com.cappielloantonio.tempo.ui.adapter.PlaylistHorizontalAdapter;
 import com.cappielloantonio.tempo.ui.adapter.ShareHorizontalAdapter;
 import com.cappielloantonio.tempo.ui.adapter.SimilarTrackAdapter;
@@ -93,9 +95,6 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
     private ListenableFuture<MediaBrowser> mediaBrowserListenableFuture;
 
     private MusicFolderAdapter favoriteFolderAdapter;
-    private View favoriteFolderSector;
-    private TextView favoriteFolderTextViewClickable;
-    private TextView favoriteFolderTextViewRefreshable;
 
     @Nullable
     @Override
@@ -251,7 +250,7 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
         });
 
         bind.favoriteFolderTextViewRefreshable.setOnLongClickListener(v -> {
-            homeViewModel.refreshFavoriteFolder();
+            homeViewModel.refreshFavoriteFolder(getViewLifecycleOwner());
             return true;
         });
 
@@ -357,26 +356,16 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
     private void initFavoriteFolderView() {
         if (homeViewModel.checkHomeSectorVisibility(Constants.HOME_SECTOR_FAVORITE_FOLDER)) return;
 
-        bind.homeFavoriteFolderSector.setVisibility(View.VISIBLE);
-        bind.favoriteFolderTextViewClickable.setOnClickListener(v -> {
-            Bundle bundle = new Bundle();
-            bundle.putString(Constants.FAVORITE_FOLDER_SECTOR_ID, Constants.HOME_SECTOR_FAVORITE_FOLDER);
-            activity.navController.navigate(R.id.action_homeFragment_to_libraryFragment, bundle);
-        });
+        bind.favoriteFolderTextViewClickable.setOnClickListener(v ->
+                activity.navController.navigate(R.id.libraryFragment));
 
-        bind.favoriteFolderTextViewRefreshable.setOnLongClickListener(v -> {
-            homeViewModel.refreshFavoriteFolder();
-            return true;
-        });
-
-        bind.favoriteFolderTextViewClickable.setText(R.string.home_title_favorite_folder);
-
-        homeViewModel.getFavoriteFolderSector(getViewLifecycleOwner()).observe(getViewLifecycleOwner(), sector -> {
-            if (sector == null) {
+        homeViewModel.getFavoriteFolderSector(getViewLifecycleOwner()).observe(getViewLifecycleOwner(), folders -> {
+            if (folders == null || folders.isEmpty()) {
                 if (bind != null) bind.homeFavoriteFolderSector.setVisibility(View.GONE);
             } else {
                 if (bind != null) bind.homeFavoriteFolderSector.setVisibility(View.VISIBLE);
-                bind.favoriteFolderAdapter.setItems(sector.getFolderItems());
+
+                favoriteFolderAdapter.setItems(folders);
             }
         });
     }
@@ -820,7 +809,7 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
 
                 switch (sector.getId()) {
                     case Constants.HOME_SECTOR_FAVORITE_FOLDER:
-                        bind.homeLinearLayoutContainer.addView(bind.favoriteFolderSector);
+                        bind.homeLinearLayoutContainer.addView(bind.homeFavoriteFolderSector);
                         break;
                     case Constants.HOME_SECTOR_DISCOVERY:
                         bind.homeLinearLayoutContainer.addView(bind.homeDiscoverSector);
@@ -937,12 +926,6 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
             List<Child> media = bundle.getParcelableArrayList(Constants.TRACKS_OBJECT);
             MediaManager.startQueue(mediaBrowserListenableFuture, media, bundle.getInt(Constants.ITEM_POSITION));
             activity.setBottomSheetInPeek(true);
-        } else if (bundle.containsKey(Constants.FAVORITE_FOLDER_SECTOR_ID)) {
-            // Navigate to library with the favorite folder
-            String folderId = bundle.getString(Constants.FAVORITE_FOLDER_SECTOR_ID);
-            Bundle navBundle = new Bundle();
-            navBundle.putParcelable(Constants.MUSIC_FOLDER_OBJECT, bundle.getParcelable(Constants.FAVORITE_FOLDER_OBJECT));
-            activity.navController.navigate(R.id.action_homeFragment_to_libraryFragment, navBundle);
         } else {
             MediaManager.startQueue(mediaBrowserListenableFuture, bundle.getParcelableArrayList(Constants.TRACKS_OBJECT), bundle.getInt(Constants.ITEM_POSITION));
             activity.setBottomSheetInPeek(true);
@@ -1040,5 +1023,10 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
     @Override
     public void onShareLongClick(Bundle bundle) {
         Navigation.findNavController(requireView()).navigate(R.id.shareBottomSheetDialog, bundle);
+    }
+
+    @Override
+    public void onMusicFolderClick(Bundle bundle) {
+        Navigation.findNavController(requireView()).navigate(R.id.indexFragment, bundle);
     }
 }

@@ -305,7 +305,7 @@ public class MediaManager {
             mediaBrowserListenableFuture.addListener(() -> {
                 try {
                     if (mediaBrowserListenableFuture.isDone()) {
-                        callback.onRecovery(mediaBrowserListenableFuture.get().getCurrentPosition());
+                        callback.onPositionRecovery(mediaBrowserListenableFuture.get().getCurrentPosition());
                     }
                 } catch (ExecutionException | InterruptedException e) {
                     e.printStackTrace();

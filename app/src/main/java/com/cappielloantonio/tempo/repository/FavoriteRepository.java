@@ -78,30 +78,44 @@ public class FavoriteRepository {
         return favorites;
     }
 
-    public List<HomeSector> getFavoriteFolders() {
-        List<HomeSector> favoriteFolders = new ArrayList<>();
+    public List<String> getFavoriteFolderIds() {
+        List<String> folderIds = new ArrayList<>();
 
-        List<Favorite> favorites = getFavorites();
-        for (Favorite favorite : favorites) {
-            if (favorite.getFolderId() != null) {
-                String key = favorite.getFolderId();
-                // Find if already exists
-                boolean found = false;
-                for (HomeSector sector : favoriteFolders) {
-                    if (sector.getId().equals(key)) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    // Get the folder name from the subsonic client
-                    // For now, use a generic title
-                    favoriteFolders.add(new HomeSector(key, key, true, favorite.getTimestamp()));
-                }
+        for (Favorite favorite : getFavorites()) {
+            if (favorite.getFolderId() != null && !folderIds.contains(favorite.getFolderId())) {
+                folderIds.add(favorite.getFolderId());
             }
         }
 
-        return favoriteFolders;
+        return folderIds;
+    }
+
+    public boolean isFolderFavorite(String folderId) {
+        if (folderId == null) return false;
+
+        for (Favorite favorite : getFavorites()) {
+            if (folderId.equals(favorite.getFolderId())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void setFolderFavorite(String folderId, boolean favorite) {
+        if (folderId == null) return;
+
+        if (favorite) {
+            InsertThreadSafe insert = new InsertThreadSafe(favoriteDao, new Favorite(System.currentTimeMillis(), null, null, null, true, folderId));
+            Thread thread = new Thread(insert);
+            thread.start();
+        } else {
+            for (Favorite favoriteItem : getFavorites()) {
+                if (folderId.equals(favoriteItem.getFolderId())) {
+                    delete(favoriteItem);
+                }
+            }
+        }
     }
 
     private static class GetAllThreadSafe implements Runnable {
@@ -123,7 +137,7 @@ public class FavoriteRepository {
     }
 
     public void starLater(String id, String albumId, String artistId, boolean toStar) {
-        InsertThreadSafe insert = new InsertThreadSafe(favoriteDao, new Favorite(System.currentTimeMillis(), id, albumId, artistId, toStar));
+        InsertThreadSafe insert = new InsertThreadSafe(favoriteDao, new Favorite(System.currentTimeMillis(), id, albumId, artistId, toStar, null));
         Thread thread = new Thread(insert);
         thread.start();
     }

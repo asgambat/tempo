@@ -14,6 +14,8 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.core.splashscreen.SplashScreen;
 import androidx.fragment.app.FragmentManager;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.Player;
 import androidx.media3.common.util.UnstableApi;
@@ -441,27 +443,6 @@ public class MainActivity extends BaseActivity {
     private void checkTempoUpdate() {
         if (BuildConfig.FLAVOR.equals("tempo") && Preferences.showTempoUpdateDialog()) {
             observeOnce(mainViewModel.checkTempoUpdate(), latestRelease -> {
-                if (latestRelease != null && UpdateUtil.showUpdateDialog(latestRelease)) {
-                    GithubTempoUpdateDialog dialog = new GithubTempoUpdateDialog(latestRelease);
-                    dialog.show(getSupportFragmentManager(), null);
-                }
-            });
-        }
-    }
-
-    private void getOpenSubsonicExtensions() {
-        if (Preferences.getToken() != null) {
-            mainViewModel.getOpenSubsonicExtensions().observe(this, openSubsonicExtensions -> {
-                if (openSubsonicExtensions != null) {
-                    Preferences.setOpenSubsonicExtensions(openSubsonicExtensions);
-                }
-            });
-        }
-    }
-
-    private void checkTempoUpdate() {
-        if (BuildConfig.FLAVOR.equals("tempo") && Preferences.showTempoUpdateDialog()) {
-            mainViewModel.checkTempoUpdate().observe(this, latestRelease -> {
                 if (latestRelease != null && UpdateUtil.showUpdateDialog(latestRelease)) {
                     GithubTempoUpdateDialog dialog = new GithubTempoUpdateDialog(latestRelease);
                     dialog.show(getSupportFragmentManager(), null);
