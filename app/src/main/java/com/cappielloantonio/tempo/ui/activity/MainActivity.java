@@ -384,16 +384,25 @@ public class MainActivity extends BaseActivity {
         }
     }
 
+    private <T> void observeOnce(LiveData<T> liveData, Observer<T> onResult) {
+        liveData.observe(this, new Observer<T>() {
+            @Override
+            public void onChanged(T value) {
+                liveData.removeObserver(this);
+                onResult.onChanged(value);
+            }
+        });
+    }
+
     private void pingServer() {
         if (Preferences.getToken() == null) return;
 
         if (Preferences.isInUseServerAddressLocal()) {
-            mainViewModel.ping().observe(this, subsonicResponse -> {
+            observeOnce(mainViewModel.ping(), subsonicResponse -> {
                 if (subsonicResponse == null) {
                     Preferences.setServerSwitchableTimer();
                     Preferences.switchInUseServerAddress();
                     App.refreshSubsonicClient();
-                    pingServer();
                 } else {
                     Preferences.setOpenSubsonic(subsonicResponse.getOpenSubsonic() != null && subsonicResponse.getOpenSubsonic());
                 }
@@ -405,7 +414,7 @@ public class MainActivity extends BaseActivity {
                 App.refreshSubsonicClient();
                 pingServer();
             } else {
-                mainViewModel.ping().observe(this, subsonicResponse -> {
+                observeOnce(mainViewModel.ping(), subsonicResponse -> {
                     if (subsonicResponse == null) {
                         if (Preferences.showServerUnreachableDialog()) {
                             ServerUnreachableDialog dialog = new ServerUnreachableDialog();
@@ -416,6 +425,27 @@ public class MainActivity extends BaseActivity {
                     }
                 });
             }
+        }
+    }
+
+    private void getOpenSubsonicExtensions() {
+        if (Preferences.getToken() != null) {
+            observeOnce(mainViewModel.getOpenSubsonicExtensions(), openSubsonicExtensions -> {
+                if (openSubsonicExtensions != null) {
+                    Preferences.setOpenSubsonicExtensions(openSubsonicExtensions);
+                }
+            });
+        }
+    }
+
+    private void checkTempoUpdate() {
+        if (BuildConfig.FLAVOR.equals("tempo") && Preferences.showTempoUpdateDialog()) {
+            observeOnce(mainViewModel.checkTempoUpdate(), latestRelease -> {
+                if (latestRelease != null && UpdateUtil.showUpdateDialog(latestRelease)) {
+                    GithubTempoUpdateDialog dialog = new GithubTempoUpdateDialog(latestRelease);
+                    dialog.show(getSupportFragmentManager(), null);
+                }
+            });
         }
     }
 

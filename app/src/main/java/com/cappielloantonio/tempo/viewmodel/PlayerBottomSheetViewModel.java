@@ -51,6 +51,7 @@ public class PlayerBottomSheetViewModel extends AndroidViewModel {
     private final MutableLiveData<LyricsList> lyricsListLiveData = new MutableLiveData<>(null);
     private final MutableLiveData<String> descriptionLiveData = new MutableLiveData<>(null);
     private final MutableLiveData<Child> liveMedia = new MutableLiveData<>(null);
+
     private final MutableLiveData<AlbumID3> liveAlbum = new MutableLiveData<>(null);
     private final MutableLiveData<ArtistID3> liveArtist = new MutableLiveData<>(null);
     private final MutableLiveData<List<Child>> instantMix = new MutableLiveData<>(null);
@@ -221,17 +222,14 @@ public class PlayerBottomSheetViewModel extends AndroidViewModel {
         return queueRepository.getPlayQueue();
     }
 
-    public boolean savePlayQueue() {
+    public void savePlayQueue(long positionMs) {
         Child media = getLiveMedia().getValue();
         List<Child> queue = queueRepository.getMedia();
         List<String> ids = queue.stream().map(Child::getId).collect(Collectors.toList());
 
         if (media != null) {
-            queueRepository.savePlayQueue(ids, media.getId(), 0);
-            return true;
+            queueRepository.savePlayQueue(ids, media.getId(), positionMs);
         }
-
-        return false;
     }
 
     public void changeSyncLyricsState() {

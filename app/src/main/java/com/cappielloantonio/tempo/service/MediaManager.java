@@ -300,6 +300,20 @@ public class MediaManager {
         }
     }
 
+    public static void getCurrentPosition(ListenableFuture<MediaBrowser> mediaBrowserListenableFuture, MediaIndexCallback callback) {
+        if (mediaBrowserListenableFuture != null) {
+            mediaBrowserListenableFuture.addListener(() -> {
+                try {
+                    if (mediaBrowserListenableFuture.isDone()) {
+                        callback.onRecovery(mediaBrowserListenableFuture.get().getCurrentPosition());
+                    }
+                } catch (ExecutionException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }, MoreExecutors.directExecutor());
+        }
+    }
+
     public static void setLastPlayedTimestamp(MediaItem mediaItem) {
         if (mediaItem != null) getQueueRepository().setLastPlayedTimestamp(mediaItem.mediaId);
     }

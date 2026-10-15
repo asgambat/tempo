@@ -137,9 +137,18 @@ public class PlayerCoverFragment extends Fragment {
                 });
 
                 bind.innerButtonBottomRight.setOnClickListener(view -> {
-                    if (playerBottomSheetViewModel.savePlayQueue()) {
-                        Snackbar.make(requireView(), "Salvato", Snackbar.LENGTH_LONG).show();
-                    }
+                    MediaManager.getCurrentPosition(mediaBrowserListenableFuture, new MediaIndexCallback() {
+                        @Override
+                        public void onRecovery(int index) {
+                            // fallback if onPositionRecovery not called
+                            playerBottomSheetViewModel.savePlayQueue(0L);
+                        }
+
+                        @Override
+                        public void onPositionRecovery(long positionMs) {
+                            playerBottomSheetViewModel.savePlayQueue(positionMs);
+                        }
+                    });
                 });
 
                 bind.innerButtonBottomRightAlternative.setOnClickListener(view -> {
