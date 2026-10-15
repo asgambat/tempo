@@ -27,6 +27,9 @@ data class Favorite(
 
     @ColumnInfo(name = "toStar")
     val toStar: Boolean,
+
+    @ColumnInfo(name = "folderId")
+    val folderId: String?,
 ) : Parcelable {
-    override fun toString(): String = (songId ?: "null") + (albumId ?: "null") + (artistId ?: "null")
+    override fun toString(): String = (songId ?: "null") + (albumId ?: "null") + (artistId ?: "null") + (folderId ?: "null")
 }

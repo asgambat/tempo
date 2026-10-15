@@ -92,6 +92,11 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
 
     private ListenableFuture<MediaBrowser> mediaBrowserListenableFuture;
 
+    private MusicFolderAdapter favoriteFolderAdapter;
+    private View favoriteFolderSector;
+    private TextView favoriteFolderTextViewClickable;
+    private TextView favoriteFolderTextViewRefreshable;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -100,6 +105,11 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
         bind = FragmentHomeTabMusicBinding.inflate(inflater, container, false);
         View view = bind.getRoot();
         homeViewModel = new ViewModelProvider(requireActivity()).get(HomeViewModel.class);
+
+        // Initialize favorite folder adapter
+        favoriteFolderAdapter = new MusicFolderAdapter(this);
+        bind.favoriteFolderRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+        bind.favoriteFolderRecyclerView.setAdapter(favoriteFolderAdapter);
 
         init();
 
@@ -112,6 +122,7 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
 
         initSyncStarredView();
         initDiscoverSongSlideView();
+        initFavoriteFolderView();
         initSimilarSongView();
         initArtistRadio();
         initArtistBestOf();
@@ -239,6 +250,11 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
             return true;
         });
 
+        bind.favoriteFolderTextViewRefreshable.setOnLongClickListener(v -> {
+            homeViewModel.refreshFavoriteFolder();
+            return true;
+        });
+
         bind.recentlyPlayedAlbumsTextViewRefreshable.setOnLongClickListener(v -> {
             homeViewModel.refreshRecentlyPlayedAlbumList(getViewLifecycleOwner());
             return true;
@@ -336,6 +352,33 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
         });
 
         setSlideViewOffset(bind.discoverSongViewPager, 20, 16);
+    }
+
+    private void initFavoriteFolderView() {
+        if (homeViewModel.checkHomeSectorVisibility(Constants.HOME_SECTOR_FAVORITE_FOLDER)) return;
+
+        bind.homeFavoriteFolderSector.setVisibility(View.VISIBLE);
+        bind.favoriteFolderTextViewClickable.setOnClickListener(v -> {
+            Bundle bundle = new Bundle();
+            bundle.putString(Constants.FAVORITE_FOLDER_SECTOR_ID, Constants.HOME_SECTOR_FAVORITE_FOLDER);
+            activity.navController.navigate(R.id.action_homeFragment_to_libraryFragment, bundle);
+        });
+
+        bind.favoriteFolderTextViewRefreshable.setOnLongClickListener(v -> {
+            homeViewModel.refreshFavoriteFolder();
+            return true;
+        });
+
+        bind.favoriteFolderTextViewClickable.setText(R.string.home_title_favorite_folder);
+
+        homeViewModel.getFavoriteFolderSector(getViewLifecycleOwner()).observe(getViewLifecycleOwner(), sector -> {
+            if (sector == null) {
+                if (bind != null) bind.homeFavoriteFolderSector.setVisibility(View.GONE);
+            } else {
+                if (bind != null) bind.homeFavoriteFolderSector.setVisibility(View.VISIBLE);
+                bind.favoriteFolderAdapter.setItems(sector.getFolderItems());
+            }
+        });
     }
 
     private void initSimilarSongView() {
@@ -776,6 +819,9 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
                 if (!sector.isVisible()) continue;
 
                 switch (sector.getId()) {
+                    case Constants.HOME_SECTOR_FAVORITE_FOLDER:
+                        bind.homeLinearLayoutContainer.addView(bind.favoriteFolderSector);
+                        break;
                     case Constants.HOME_SECTOR_DISCOVERY:
                         bind.homeLinearLayoutContainer.addView(bind.homeDiscoverSector);
                         break;
@@ -891,6 +937,12 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
             List<Child> media = bundle.getParcelableArrayList(Constants.TRACKS_OBJECT);
             MediaManager.startQueue(mediaBrowserListenableFuture, media, bundle.getInt(Constants.ITEM_POSITION));
             activity.setBottomSheetInPeek(true);
+        } else if (bundle.containsKey(Constants.FAVORITE_FOLDER_SECTOR_ID)) {
+            // Navigate to library with the favorite folder
+            String folderId = bundle.getString(Constants.FAVORITE_FOLDER_SECTOR_ID);
+            Bundle navBundle = new Bundle();
+            navBundle.putParcelable(Constants.MUSIC_FOLDER_OBJECT, bundle.getParcelable(Constants.FAVORITE_FOLDER_OBJECT));
+            activity.navController.navigate(R.id.action_homeFragment_to_libraryFragment, navBundle);
         } else {
             MediaManager.startQueue(mediaBrowserListenableFuture, bundle.getParcelableArrayList(Constants.TRACKS_OBJECT), bundle.getInt(Constants.ITEM_POSITION));
             activity.setBottomSheetInPeek(true);

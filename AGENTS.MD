@@ -91,7 +91,6 @@ Mappa dei package sotto `app/src/main/java/com/cappielloantonio/tempo/`:
 | `interfaces/` | callback di click/diaolog usate da fragment e adapter (`ClickCallback`, `DialogClickCallback`, …) | Java |
 | `helper/` | `ThemeHelper.java`, helper RecyclerView (`helper/recyclerview/`) | Java + Kotlin |
 | `glide/` | `CustomGlideModule.java` (cache disco, RGB_565), `CustomGlideRequest.java` | Java |
-| `broadcast/receiver/` | receiver (es. boot) | Java |
 
 ## 5. Convenzioni irrinunciabili
 
@@ -163,7 +162,7 @@ Mappa dei package sotto `app/src/main/java/com/cappielloantonio/tempo/`:
 ## 8. Insidie note e debito tecnico (leggere prima di rifattorizzare)
 
 - `onFailure` dei callback Retrofit è spesso **vuoto**: è lo stato di fatto, ma nel codice nuovo logga almeno l'errore (`Log.e(TAG, ...)`), non copiare il vuoto.
-- L'interceptor di logging OkHttp è a livello **BODY e sempre attivo** (anche in release): non loggare dati sensibili in più; eventuale fix va valutato come task dedicato.
+- L'interceptor di logging OkHttp ora scrive il livello **BODY solo in build debuggable**: in release è `NONE` (le URL del client Subsonico contengono `p`/`t`/`s` di autenticazione). Il client GitHub usa `BASIC` in debug, `NONE` in release — non reintrodurre `BODY` incondizionato.
 - Scritture Room via `Thread + join()` (`QueueRepository`): pattern legacy bloccante — non estenderlo; per codice nuovo preferisci semplici thread/executor espliciti o LiveData.
 - Il fragment si riconnette al `MediaBrowser` in `onStart` e lo rilascia in `onStop` (`ListenableFuture<MediaBrowser>`): rispetta il ciclo, altrimenti il playback remoto si disallinea.
 - `MusicUtil.limitPlayableMedia` limita la coda a 100 elementi (`PLAYABLE_MEDIA_LIMIT`, pre-play 15): tenersene conto negli adapter.

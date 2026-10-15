@@ -1,5 +1,7 @@
 package com.cappielloantonio.tempo.subsonic
 
+import android.content.pm.ApplicationInfo
+
 import com.cappielloantonio.tempo.App
 import com.cappielloantonio.tempo.subsonic.utils.CacheUtil
 import com.google.gson.GsonBuilder
@@ -49,7 +51,12 @@ class RetrofitClient(subsonic: Subsonic) {
 
     private fun getHttpLoggingInterceptor(): HttpLoggingInterceptor {
         val loggingInterceptor = HttpLoggingInterceptor()
-        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY)
+
+        // Level BODY in release loggherebbe le URL complete (con p/t/s di autenticazione) nel logcat,
+        // anche di build distribuite: BODY solo in debug.
+        val debuggable = App.getContext().applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+        loggingInterceptor.setLevel(if (debuggable) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE)
+
         return loggingInterceptor
     }
 

@@ -47,6 +47,7 @@ public class HomeViewModel extends AndroidViewModel {
     private final PlaylistRepository playlistRepository;
     private final SharingRepository sharingRepository;
 
+    private final MutableLiveData<List<HomeSector>> favoriteFolderSector = new MutableLiveData<>(null);
     private final MutableLiveData<List<Child>> dicoverSongSample = new MutableLiveData<>(null);
     private final MutableLiveData<List<AlbumID3>> newReleasedAlbum = new MutableLiveData<>(null);
     private final MutableLiveData<List<Child>> starredTracksSample = new MutableLiveData<>(null);
@@ -164,6 +165,14 @@ public class HomeViewModel extends AndroidViewModel {
         }
 
         return starredAlbums;
+    }
+
+    public LiveData<List<HomeSector>> getFavoriteFolderSector(LifecycleOwner owner) {
+        if (favoriteFolderSector.getValue() == null) {
+            favoriteRepository.getFavoriteFolders().observe(owner, favoriteFolderSector::postValue);
+        }
+
+        return favoriteFolderSector;
     }
 
     public LiveData<List<ArtistID3>> getStarredArtists(LifecycleOwner owner) {
@@ -323,6 +332,10 @@ public class HomeViewModel extends AndroidViewModel {
 
     public void refreshRecentlyPlayedAlbumList(LifecycleOwner owner) {
         albumRepository.getAlbums("recent", 20, null, null).observe(owner, recentlyPlayedAlbumSample::postValue);
+    }
+
+    public void refreshFavoriteFolder(LifecycleOwner owner) {
+        favoriteRepository.getFavoriteFolders().observe(owner, favoriteFolderSector::postValue);
     }
 
     public void refreshShares(LifecycleOwner owner) {

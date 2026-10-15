@@ -1,9 +1,11 @@
 package com.cappielloantonio.tempo.ui.activity;
 
 import android.content.Context;
-import android.content.IntentFilter;
 import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
+import android.net.NetworkRequest;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -23,7 +25,6 @@ import androidx.navigation.ui.NavigationUI;
 import com.cappielloantonio.tempo.App;
 import com.cappielloantonio.tempo.BuildConfig;
 import com.cappielloantonio.tempo.R;
-import com.cappielloantonio.tempo.broadcast.receiver.ConnectivityStatusBroadcastReceiver;
 import com.cappielloantonio.tempo.databinding.ActivityMainBinding;
 import com.cappielloantonio.tempo.github.utils.UpdateUtil;
 import com.cappielloantonio.tempo.service.MediaManager;
@@ -33,6 +34,7 @@ import com.cappielloantonio.tempo.ui.dialog.GithubTempoUpdateDialog;
 import com.cappielloantonio.tempo.ui.dialog.ServerUnreachableDialog;
 import com.cappielloantonio.tempo.ui.fragment.PlayerBottomSheetFragment;
 import com.cappielloantonio.tempo.util.Constants;
+import com.cappielloantonio.tempo.util.NetworkUtil;
 import com.cappielloantonio.tempo.util.Preferences;
 import com.cappielloantonio.tempo.viewmodel.MainViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -56,7 +58,7 @@ public class MainActivity extends BaseActivity {
     public NavController navController;
     private BottomSheetBehavior bottomSheetBehavior;
 
-    ConnectivityStatusBroadcastReceiver connectivityStatusBroadcastReceiver;
+    private ConnectivityManager.NetworkCallback networkCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,8 +73,7 @@ public class MainActivity extends BaseActivity {
 
         mainViewModel = new ViewModelProvider(this).get(MainViewModel.class);
 
-        connectivityStatusBroadcastReceiver = new ConnectivityStatusBroadcastReceiver(this);
-        connectivityStatusReceiverManager(true);
+        registerConnectivityCallback();
 
         init();
         checkConnectionType();
@@ -95,7 +96,7 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        connectivityStatusReceiverManager(false);
+        unregisterConnectivityCallback();
         bind = null;
     }
 
@@ -344,12 +345,42 @@ public class MainActivity extends BaseActivity {
     }
 
     // CONNECTION
-    private void connectivityStatusReceiverManager(boolean isActive) {
-        if (isActive) {
-            IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-            registerReceiver(connectivityStatusBroadcastReceiver, filter);
-        } else {
-            unregisterReceiver(connectivityStatusBroadcastReceiver);
+    private void registerConnectivityCallback() {
+        NetworkRequest networkRequest = new NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build();
+
+        networkCallback = new ConnectivityManager.NetworkCallback() {
+            @Override
+            public void onAvailable(@NonNull Network network) {
+                runOnUiThread(() -> setOfflineBanner(false));
+            }
+
+            @Override
+            public void onLost(@NonNull Network network) {
+                runOnUiThread(() -> setOfflineBanner(NetworkUtil.isOffline()));
+            }
+        };
+
+        getConnectivityManager().registerNetworkCallback(networkRequest, networkCallback);
+
+        setOfflineBanner(NetworkUtil.isOffline());
+    }
+
+    private void unregisterConnectivityCallback() {
+        if (networkCallback != null) {
+            getConnectivityManager().unregisterNetworkCallback(networkCallback);
+            networkCallback = null;
+        }
+    }
+
+    private ConnectivityManager getConnectivityManager() {
+        return (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+    }
+
+    private void setOfflineBanner(boolean visible) {
+        if (bind != null) {
+            bind.offlineModeTextView.setVisibility(visible ? View.VISIBLE : View.GONE);
         }
     }
 

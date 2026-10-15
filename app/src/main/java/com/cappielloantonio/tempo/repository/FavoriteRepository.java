@@ -78,6 +78,32 @@ public class FavoriteRepository {
         return favorites;
     }
 
+    public List<HomeSector> getFavoriteFolders() {
+        List<HomeSector> favoriteFolders = new ArrayList<>();
+
+        List<Favorite> favorites = getFavorites();
+        for (Favorite favorite : favorites) {
+            if (favorite.getFolderId() != null) {
+                String key = favorite.getFolderId();
+                // Find if already exists
+                boolean found = false;
+                for (HomeSector sector : favoriteFolders) {
+                    if (sector.getId().equals(key)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    // Get the folder name from the subsonic client
+                    // For now, use a generic title
+                    favoriteFolders.add(new HomeSector(key, key, true, favorite.getTimestamp()));
+                }
+            }
+        }
+
+        return favoriteFolders;
+    }
+
     private static class GetAllThreadSafe implements Runnable {
         private final FavoriteDao favoriteDao;
         private List<Favorite> favorites = new ArrayList<>();

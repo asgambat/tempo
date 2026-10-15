@@ -1,6 +1,6 @@
 # Plan 004 — Connectivity: `NetworkCallback` al posto del broadcast morto
 
-**Base commit:** `50365b8c` · **Categoria:** correttezza (feature UI non funzionante) · **Sforzo:** S · **Rischio fix:** basso
+**Stato: DONE (2026-10-15)** · Base commit: `50365b8c` · **Categoria:** correttezza (feature UI non funzionante) · **Sforzo:** S · **Rischio fix:** basso
 
 ## Problema
 

@@ -1,6 +1,6 @@
 # Plan 005 — Logging senza credenziali (OkHttp level + redaction)
 
-**Base commit:** `50365b8c` · **Categoria:** sicurezza / privacy · **Sforzo:** S · **Rischio fix:** basso
+**Stato: DONE (2026-10-15)** — implementato il passo 1 (`BODY` solo debuggabile, `NONE` in release su RetrofitClient; `BASIC`/`NONE` su GithubRetrofitClient) e il passo 2 nella forma scelta dal piano (nessun interceptor di redaction custom). AGENTS.md §8 aggiornato nello stesso commit. Base commit: `50365b8c` · **Categoria:** sicurezza / privacy · **Sforzo:** S · **Rischio fix:** basso
 
 ## Problema
 

@@ -1,5 +1,8 @@
 package com.cappielloantonio.tempo.github
 
+import android.content.pm.ApplicationInfo
+
+import com.cappielloantonio.tempo.App
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -24,7 +27,11 @@ class GithubRetrofitClient(github: Github) {
 
     private fun getHttpLoggingInterceptor(): HttpLoggingInterceptor {
         val loggingInterceptor = HttpLoggingInterceptor()
-        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY)
+
+        // Nessuna credenziale qui: BASIC in debug (riga richiesta + codice risposta), silenzio in release.
+        val debuggable = App.getContext().applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+        loggingInterceptor.setLevel(if (debuggable) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE)
+
         return loggingInterceptor
     }
 }

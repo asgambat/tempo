@@ -10,8 +10,8 @@ Stato del repository al momento dell'audit: esiste già un diff di lavoro **non 
 | 001 | Guardie su `QueueRepository` (crash NPE + IOOBE) | — | DONE (2026-10-15, verificato con `compileTempoDebugJavaWithJavac`) |
 | 002 | Robustezza playback/UI (leak `MediaBrowser`, mutazioni lista, `subList` asincrone, sort NPE residui) | — (dopo 001 consigliato, tocca lo stesso dominio) | DONE (2026-10-15, 3 flavor compilati, v. diario nel plan) |
 | 003 | `savePlayQueue` con posizione reale | — | TODO |
-| 004 | Connectivity: `NetworkCallback` al posto del broadcast morto | — | TODO |
-| 005 | Logging senza credenziali (OkHttp level + redaction) | — | TODO |
+| 004 | Connectivity: `NetworkCallback` al posto del broadcast morto | — | DONE (2026-10-15, `compileTempoDebugJavaWithJavac` exit 0; receiver cancellato) |
+| 005 | Logging senza credenziali (OkHttp level condizionato al debug) | — | DONE (2026-10-15, `compileTempoDebugJavaWithJavac` exit 0) |
 | 006 | Observer accumulation + retry-on-failure | NON prima di 003 (①toccano lo stesso flusso bottom-sheet) | TODO |
 
 ## Regole trasversali per ogni executor
