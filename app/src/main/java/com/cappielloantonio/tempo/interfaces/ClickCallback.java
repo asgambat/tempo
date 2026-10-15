@@ -27,6 +27,7 @@ public interface ClickCallback {
     default void onInternetRadioStationClick(Bundle bundle) {}
     default void onInternetRadioStationLongClick(Bundle bundle) {}
     default void onMusicFolderClick(Bundle bundle) {}
+    default void onMusicFolderFavoriteToggle(Bundle bundle) {}
     default void onMusicDirectoryClick(Bundle bundle) {}
     default void onMusicIndexClick(Bundle bundle) {}
     default void onDownloadGroupLongClick(Bundle bundle) {}

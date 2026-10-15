@@ -35,17 +35,18 @@
         android:singleLine="true"
         android:text="@string/label_placeholder"
         app:layout_constraintBottom_toBottomOf="@id/music_folder_cover_image_view"
-        app:layout_constraintEnd_toStartOf="@+id/music_folder_more_button"
+        app:layout_constraintEnd_toStartOf="@+id/music_folder_favorite_button"
         app:layout_constraintStart_toEndOf="@+id/cover_image_separator"
         app:layout_constraintTop_toTopOf="@+id/music_folder_cover_image_view" />
 
     <ImageView
-        android:id="@+id/music_folder_more_button"
+        android:id="@+id/music_folder_favorite_button"
         android:layout_width="22dp"
         android:layout_height="22dp"
         android:layout_marginStart="4dp"
         android:layout_marginEnd="4dp"
-        android:background="@drawable/ic_navigate_next"
+        android:contentDescription="@string/content_description_music_folder_favorite"
+        android:src="@drawable/ic_star_outlined"
         android:foreground="?android:attr/selectableItemBackgroundBorderless"
         app:layout_constraintBottom_toBottomOf="@id/music_folder_title_text_view"
         app:layout_constraintEnd_toEndOf="parent"

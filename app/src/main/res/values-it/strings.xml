@@ -55,6 +55,7 @@
 	<string name="connection_alert_dialog_positive_button">OK</string>
 	<string name="connection_alert_dialog_summary">L\'accesso al server Subsonic è stato limitato alle connessioni Wi-Fi. Per evitare che questo avviso riappaia, disabilita il controllo connessione nelle impostazioni dell\'app.</string>
 	<string name="connection_alert_dialog_title">Wi-Fi non connesso</string>
+	<string name="content_description_music_folder_favorite">Cartella preferita</string>
 	<string name="content_description_shuffle_button">Riproduzione casuale</string>
 	<string name="delete_download_storage_dialog_negative_button">Annulla</string>
 	<string name="delete_download_storage_dialog_positive_button">Continua</string>
@@ -113,6 +114,8 @@
 	<string name="home_title_best_of">Il meglio di</string>
 	<string name="home_title_discovery">Scoperta</string>
 	<string name="home_title_discovery_shuffle_all_button">Mescola tutto</string>
+	<string name="home_title_favorite_folder">Cartelle preferite</string>
+	<string name="home_title_favorite_folder_see_all">Vedi tutto</string>
 	<string name="home_title_flashback">Flashback</string>
 	<string name="home_title_internet_radio_station">Stazioni radio internet</string>
 	<string name="home_title_last_played">Ultimi ascolti</string>
@@ -155,6 +158,8 @@
 	<string name="login_title">Server Subsonic</string>
 	<string name="login_title_expanded">Server Subsonic</string>
 	<string name="media_route_menu_title">Trasmetti</string>
+	<string name="music_folder_added_to_favorites">Aggiunta ai preferiti</string>
+	<string name="music_folder_removed_from_favorites">Rimossa dai preferiti</string>
 	<string name="menu_add_button">Aggiungi</string>
 	<string name="menu_download_all_button">Scarica tutto</string>
 	<string name="menu_download_label">Scarica</string>

@@ -34,6 +34,7 @@ import com.cappielloantonio.tempo.interfaces.ClickCallback;
 import com.cappielloantonio.tempo.interfaces.PlaylistCallback;
 import com.cappielloantonio.tempo.model.Download;
 import com.cappielloantonio.tempo.model.HomeSector;
+import com.cappielloantonio.tempo.repository.FavoriteRepository;
 import com.cappielloantonio.tempo.service.DownloaderManager;
 import com.cappielloantonio.tempo.service.MediaManager;
 import com.cappielloantonio.tempo.service.MediaService;
@@ -96,6 +97,8 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
 
     private MusicFolderAdapter favoriteFolderAdapter;
 
+    private final FavoriteRepository favoriteRepository = new FavoriteRepository();
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -152,6 +155,7 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
     public void onResume() {
         super.onResume();
         refreshSharesView();
+        refreshFavoriteFolderView();
     }
 
     @Override
@@ -365,6 +369,15 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
             } else {
                 if (bind != null) bind.homeFavoriteFolderSector.setVisibility(View.VISIBLE);
 
+                List<String> favoriteFolderIds = new ArrayList<>();
+
+                for (MusicFolder folder : folders) {
+                    if (folder.getId() != null) {
+                        favoriteFolderIds.add(folder.getId());
+                    }
+                }
+
+                favoriteFolderAdapter.setFavoriteFolderIds(favoriteFolderIds);
                 favoriteFolderAdapter.setItems(folders);
             }
         });
@@ -775,6 +788,13 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
         });
     }
 
+    private void refreshFavoriteFolderView() {
+        if (bind == null) return;
+        if (homeViewModel.checkHomeSectorVisibility(Constants.HOME_SECTOR_FAVORITE_FOLDER)) return;
+
+        homeViewModel.refreshFavoriteFolder(getViewLifecycleOwner());
+    }
+
     private void refreshSharesView() {
         final Handler handler = new Handler();
         final Runnable runnable = () -> {
@@ -1028,5 +1048,16 @@ public class HomeTabMusicFragment extends Fragment implements ClickCallback {
     @Override
     public void onMusicFolderClick(Bundle bundle) {
         Navigation.findNavController(requireView()).navigate(R.id.indexFragment, bundle);
+    }
+
+    @Override
+    public void onMusicFolderFavoriteToggle(Bundle bundle) {
+        MusicFolder musicFolder = bundle.getParcelable(Constants.MUSIC_FOLDER_OBJECT);
+
+        if (musicFolder == null || musicFolder.getId() == null) return;
+
+        favoriteRepository.setFolderFavorite(musicFolder.getId(), false);
+
+        Snackbar.make(requireView(), R.string.music_folder_removed_from_favorites, Snackbar.LENGTH_LONG).show();
     }
 }

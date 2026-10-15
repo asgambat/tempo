@@ -1,6 +1,7 @@
 package com.cappielloantonio.tempo.repository;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.LiveData;
 
 import com.cappielloantonio.tempo.App;
 import com.cappielloantonio.tempo.database.AppDatabase;
@@ -76,6 +77,10 @@ public class FavoriteRepository {
         }
 
         return favorites;
+    }
+
+    public LiveData<List<Favorite>> getFavoritesLive() {
+        return favoriteDao.getAllLive();
     }
 
     public List<String> getFavoriteFolderIds() {

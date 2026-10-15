@@ -20,6 +20,9 @@ import com.cappielloantonio.tempo.databinding.FragmentLibraryBinding;
 import com.cappielloantonio.tempo.helper.recyclerview.CustomLinearSnapHelper;
 import com.cappielloantonio.tempo.interfaces.ClickCallback;
 import com.cappielloantonio.tempo.interfaces.PlaylistCallback;
+import com.cappielloantonio.tempo.model.Favorite;
+import com.cappielloantonio.tempo.repository.FavoriteRepository;
+import com.cappielloantonio.tempo.subsonic.models.MusicFolder;
 import com.cappielloantonio.tempo.ui.activity.MainActivity;
 import com.cappielloantonio.tempo.ui.adapter.AlbumAdapter;
 import com.cappielloantonio.tempo.ui.adapter.ArtistAdapter;
@@ -31,6 +34,11 @@ import com.cappielloantonio.tempo.util.Constants;
 import com.cappielloantonio.tempo.util.Preferences;
 import com.cappielloantonio.tempo.viewmodel.LibraryViewModel;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.snackbar.Snackbar;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 
 @UnstableApi
@@ -48,6 +56,9 @@ public class LibraryFragment extends Fragment implements ClickCallback {
     private PlaylistHorizontalAdapter playlistHorizontalAdapter;
 
     private MaterialToolbar materialToolbar;
+
+    private final FavoriteRepository favoriteRepository = new FavoriteRepository();
+    private List<String> favoriteFolderIds = Collections.emptyList();
 
     @Nullable
     @Override
@@ -149,6 +160,24 @@ public class LibraryFragment extends Fragment implements ClickCallback {
                     bind.libraryMusicFolderSector.setVisibility(!musicFolders.isEmpty() ? View.VISIBLE : View.GONE);
 
                 musicFolderAdapter.setItems(musicFolders);
+            }
+        });
+
+        favoriteRepository.getFavoritesLive().observe(getViewLifecycleOwner(), favorites -> {
+            ArrayList<String> folderIds = new ArrayList<>();
+
+            if (favorites != null) {
+                for (Favorite favorite : favorites) {
+                    if (favorite.getFolderId() != null) {
+                        folderIds.add(favorite.getFolderId());
+                    }
+                }
+            }
+
+            favoriteFolderIds = folderIds;
+
+            if (musicFolderAdapter != null) {
+                musicFolderAdapter.setFavoriteFolderIds(favoriteFolderIds);
             }
         });
     }
@@ -292,5 +321,18 @@ public class LibraryFragment extends Fragment implements ClickCallback {
     @Override
     public void onMusicFolderClick(Bundle bundle) {
         Navigation.findNavController(requireView()).navigate(R.id.indexFragment, bundle);
+    }
+
+    @Override
+    public void onMusicFolderFavoriteToggle(Bundle bundle) {
+        MusicFolder musicFolder = bundle.getParcelable(Constants.MUSIC_FOLDER_OBJECT);
+
+        if (musicFolder == null || musicFolder.getId() == null) return;
+
+        boolean isFavorite = favoriteFolderIds.contains(musicFolder.getId());
+
+        favoriteRepository.setFolderFavorite(musicFolder.getId(), !isFavorite);
+
+        Snackbar.make(requireView(), isFavorite ? R.string.music_folder_removed_from_favorites : R.string.music_folder_added_to_favorites, Snackbar.LENGTH_LONG).show();
     }
 }

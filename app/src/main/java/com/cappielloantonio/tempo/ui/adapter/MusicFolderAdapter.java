@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.media3.common.util.UnstableApi;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.cappielloantonio.tempo.R;
 import com.cappielloantonio.tempo.databinding.ItemLibraryMusicFolderBinding;
 import com.cappielloantonio.tempo.glide.CustomGlideRequest;
 import com.cappielloantonio.tempo.interfaces.ClickCallback;
@@ -22,10 +23,12 @@ public class MusicFolderAdapter extends RecyclerView.Adapter<MusicFolderAdapter.
     private final ClickCallback click;
 
     private List<MusicFolder> musicFolders;
+    private List<String> favoriteFolderIds;
 
     public MusicFolderAdapter(ClickCallback click) {
         this.click = click;
         this.musicFolders = Collections.emptyList();
+        this.favoriteFolderIds = Collections.emptyList();
     }
 
     @NonNull
@@ -40,6 +43,7 @@ public class MusicFolderAdapter extends RecyclerView.Adapter<MusicFolderAdapter.
         MusicFolder musicFolder = musicFolders.get(position);
 
         holder.item.musicFolderTitleTextView.setText(musicFolder.getName());
+        holder.item.musicFolderFavoriteButton.setImageResource(isFavorite(musicFolder) ? R.drawable.ic_star : R.drawable.ic_star_outlined);
 
         CustomGlideRequest.Builder
                 .from(holder.itemView.getContext(), musicFolder.getName(), CustomGlideRequest.ResourceType.Folder)
@@ -55,6 +59,15 @@ public class MusicFolderAdapter extends RecyclerView.Adapter<MusicFolderAdapter.
     public void setItems(List<MusicFolder> musicFolders) {
         this.musicFolders = musicFolders;
         notifyDataSetChanged();
+    }
+
+    public void setFavoriteFolderIds(List<String> favoriteFolderIds) {
+        this.favoriteFolderIds = favoriteFolderIds != null ? favoriteFolderIds : Collections.emptyList();
+        notifyDataSetChanged();
+    }
+
+    private boolean isFavorite(MusicFolder musicFolder) {
+        return musicFolder.getId() != null && favoriteFolderIds.contains(musicFolder.getId());
     }
 
     public MusicFolder getItem(int position) {
@@ -73,13 +86,27 @@ public class MusicFolderAdapter extends RecyclerView.Adapter<MusicFolderAdapter.
 
             itemView.setOnClickListener(v -> onClick());
 
-            item.musicFolderMoreButton.setOnClickListener(v -> onClick());
+            item.musicFolderFavoriteButton.setOnClickListener(v -> onClickFavorite());
         }
 
         public void onClick() {
+            int position = getBindingAdapterPosition();
+
+            if (position == RecyclerView.NO_POSITION) return;
+
             Bundle bundle = new Bundle();
-            bundle.putParcelable(Constants.MUSIC_FOLDER_OBJECT, musicFolders.get(getBindingAdapterPosition()));
+            bundle.putParcelable(Constants.MUSIC_FOLDER_OBJECT, musicFolders.get(position));
             click.onMusicFolderClick(bundle);
+        }
+
+        public void onClickFavorite() {
+            int position = getBindingAdapterPosition();
+
+            if (position == RecyclerView.NO_POSITION) return;
+
+            Bundle bundle = new Bundle();
+            bundle.putParcelable(Constants.MUSIC_FOLDER_OBJECT, musicFolders.get(position));
+            click.onMusicFolderFavoriteToggle(bundle);
         }
     }
 }

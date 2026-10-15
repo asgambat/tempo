@@ -339,21 +339,33 @@ public class HomeViewModel extends AndroidViewModel {
     }
 
     public void refreshFavoriteFolder(LifecycleOwner owner) {
-        List<String> folderIds = favoriteRepository.getFavoriteFolderIds();
+        directoryRepository.getMusicFolders().observe(owner, folders ->
+                favoriteRepository.getFavoritesLive().observe(owner, favorites ->
+                        favoriteFolderSector.setValue(filterFavoriteFolders(folders, favorites))));
+    }
 
-        directoryRepository.getMusicFolders().observe(owner, folders -> {
-            List<MusicFolder> result = new ArrayList<>();
+    private List<MusicFolder> filterFavoriteFolders(List<MusicFolder> folders, List<Favorite> favorites) {
+        List<String> folderIds = new ArrayList<>();
 
-            if (folders != null) {
-                for (MusicFolder folder : folders) {
-                    if (folder.getId() != null && folderIds.contains(folder.getId())) {
-                        result.add(folder);
-                    }
+        if (favorites != null) {
+            for (Favorite favorite : favorites) {
+                if (favorite.getFolderId() != null) {
+                    folderIds.add(favorite.getFolderId());
                 }
             }
+        }
 
-            favoriteFolderSector.setValue(result);
-        });
+        List<MusicFolder> result = new ArrayList<>();
+
+        if (folders != null) {
+            for (MusicFolder folder : folders) {
+                if (folder.getId() != null && folderIds.contains(folder.getId())) {
+                    result.add(folder);
+                }
+            }
+        }
+
+        return result;
     }
 
     public void refreshShares(LifecycleOwner owner) {

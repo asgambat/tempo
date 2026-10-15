@@ -1,5 +1,6 @@
 package com.cappielloantonio.tempo.database.dao;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
@@ -14,6 +15,9 @@ import java.util.List;
 public interface FavoriteDao {
     @Query("SELECT * FROM favorite")
     List<Favorite> getAll();
+
+    @Query("SELECT * FROM favorite")
+    LiveData<List<Favorite>> getAllLive();
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     void insert(Favorite favorite);
