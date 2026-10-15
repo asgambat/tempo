@@ -116,7 +116,7 @@ public class GenreCatalogueAdapter extends RecyclerView.Adapter<GenreCatalogueAd
     public void sort(String order) {
         switch (order) {
             case Constants.GENRE_ORDER_BY_NAME:
-                genres.sort(Comparator.comparing(Genre::getGenre));
+                genres.sort(Comparator.comparing(Genre::getGenre, Comparator.nullsLast(Comparator.naturalOrder())));
                 break;
             case Constants.GENRE_ORDER_BY_RANDOM:
                 Collections.shuffle(genres);

@@ -281,7 +281,7 @@ public class PlayerBottomSheetFragment extends Fragment {
                     if (bind == null) return;
 
                     if (playQueue != null && playQueue.getEntries() != null && !playQueue.getEntries().isEmpty()) {
-                        int index = IntStream.range(0, playQueue.getEntries().size()).filter(ix -> playQueue.getEntries().get(ix).getId().equals(playQueue.getCurrent())).findFirst().orElse(-1);
+                        int index = IntStream.range(0, playQueue.getEntries().size()).filter(ix -> Objects.equals(playQueue.getEntries().get(ix).getId(), playQueue.getCurrent())).findFirst().orElse(-1);
 
                         if (index != -1) {
                             bind.playerHeaderLayout.playerHeaderBookmarkMediaButton.setVisibility(View.VISIBLE);

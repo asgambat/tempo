@@ -41,7 +41,7 @@ public class GenreRepository {
                             if (size != -1) {
                                 genres.setValue(genreList.subList(0, Math.min(size, genreList.size())));
                             } else {
-                                genres.setValue(genreList.stream().sorted(Comparator.comparing(Genre::getGenre)).collect(Collectors.toList()));
+                                genres.setValue(genreList.stream().sorted(Comparator.comparing(Genre::getGenre, Comparator.nullsLast(Comparator.naturalOrder()))).collect(Collectors.toList()));
                             }
                         }
                     }

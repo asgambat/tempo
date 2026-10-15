@@ -28,9 +28,9 @@ public class SystemRepository {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull retrofit2.Response<ApiResponse> response) {
                         if (response.body() != null && response.body().getSubsonicResponse() != null) {
-                            if (response.body().getSubsonicResponse().getStatus().equals(ResponseStatus.FAILED)) {
+                            if (ResponseStatus.FAILED.equals(response.body().getSubsonicResponse().getStatus())) {
                                 callback.onError(new Exception(response.body().getSubsonicResponse().getError() != null ? response.body().getSubsonicResponse().getError().getCode() + " - " + response.body().getSubsonicResponse().getError().getMessage() : "Empty response"));
-                            } else if (response.body().getSubsonicResponse().getStatus().equals(ResponseStatus.OK)) {
+                            } else if (ResponseStatus.OK.equals(response.body().getSubsonicResponse().getStatus())) {
                                 String password = response.raw().request().url().queryParameter("p");
                                 String token = response.raw().request().url().queryParameter("t");
                                 String salt = response.raw().request().url().queryParameter("s");

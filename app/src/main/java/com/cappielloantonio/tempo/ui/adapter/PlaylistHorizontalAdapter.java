@@ -139,7 +139,7 @@ public class PlaylistHorizontalAdapter extends RecyclerView.Adapter<PlaylistHori
     public void sort(String order) {
         switch (order) {
             case Constants.PLAYLIST_ORDER_BY_NAME:
-                playlists.sort(Comparator.comparing(Playlist::getName));
+                playlists.sort(Comparator.comparing(Playlist::getName, Comparator.nullsLast(Comparator.naturalOrder())));
                 break;
             case Constants.PLAYLIST_ORDER_BY_RANDOM:
                 Collections.shuffle(playlists);

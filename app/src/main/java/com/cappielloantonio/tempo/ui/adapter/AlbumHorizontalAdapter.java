@@ -145,7 +145,7 @@ public class AlbumHorizontalAdapter extends RecyclerView.Adapter<AlbumHorizontal
     public void sort(String order) {
         switch (order) {
             case Constants.ALBUM_ORDER_BY_NAME:
-                albums.sort(Comparator.comparing(AlbumID3::getName));
+                albums.sort(Comparator.comparing(AlbumID3::getName, Comparator.nullsLast(Comparator.naturalOrder())));
                 break;
             case Constants.ALBUM_ORDER_BY_MOST_RECENTLY_STARRED:
                 albums.sort(Comparator.comparing(AlbumID3::getStarred, Comparator.nullsLast(Comparator.reverseOrder())));

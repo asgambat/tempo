@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import android.util.Log;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -58,7 +60,7 @@ public class QueueRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getPlayQueue() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getPlayQueue() != null) {
                             playQueue.setValue(response.body().getSubsonicResponse().getPlayQueue());
                         }
                     }
@@ -102,8 +104,14 @@ public class QueueRepository {
                 mediaList = getMediaThreadSafe.getMedia();
             }
 
+            int safeIndex = Math.min(Math.max(afterIndex, 0), mediaList.size());
+
+            if (safeIndex != afterIndex) {
+                Log.w(TAG, "queue desync: clamping afterIndex " + afterIndex + " to " + safeIndex);
+            }
+
             Queue queueItem = new Queue(media);
-            mediaList.add(afterIndex, queueItem);
+            mediaList.add(safeIndex, queueItem);
 
             for (int i = 0; i < mediaList.size(); i++) {
                 mediaList.get(i).setTrackOrder(i);
@@ -134,9 +142,15 @@ public class QueueRepository {
                 media = getMediaThreadSafe.getMedia();
             }
 
+            int safeIndex = Math.min(Math.max(afterIndex, 0), media.size());
+
+            if (safeIndex != afterIndex) {
+                Log.w(TAG, "queue desync: clamping afterIndex " + afterIndex + " to " + safeIndex);
+            }
+
             for (int i = 0; i < toAdd.size(); i++) {
                 Queue queueItem = new Queue(toAdd.get(i));
-                media.add(afterIndex + i, queueItem);
+                media.add(safeIndex + i, queueItem);
             }
 
             for (int i = 0; i < media.size(); i++) {
@@ -206,6 +220,11 @@ public class QueueRepository {
         try {
             thread.join();
             Queue lastMediaPlayed = getLastPlayedMediaThreadSafe.getQueueItem();
+
+            if (lastMediaPlayed == null) {
+                return 0;
+            }
+
             index = lastMediaPlayed.getTrackOrder();
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -224,6 +243,11 @@ public class QueueRepository {
         try {
             thread.join();
             Queue lastMediaPlayed = getLastPlayedMediaThreadSafe.getQueueItem();
+
+            if (lastMediaPlayed == null) {
+                return 0;
+            }
+
             timestamp = lastMediaPlayed.getPlayingChanged();
         } catch (InterruptedException e) {
             e.printStackTrace();

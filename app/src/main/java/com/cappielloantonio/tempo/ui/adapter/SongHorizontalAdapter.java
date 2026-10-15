@@ -235,7 +235,7 @@ public class SongHorizontalAdapter extends RecyclerView.Adapter<SongHorizontalAd
     public void sort(String order) {
         switch (order) {
             case Constants.MEDIA_BY_TITLE:
-                songs.sort(Comparator.comparing(Child::getTitle));
+                songs.sort(Comparator.comparing(Child::getTitle, Comparator.nullsLast(Comparator.naturalOrder())));
                 break;
             case Constants.MEDIA_MOST_RECENTLY_STARRED:
                 songs.sort(Comparator.comparing(Child::getStarred, Comparator.nullsLast(Comparator.reverseOrder())));

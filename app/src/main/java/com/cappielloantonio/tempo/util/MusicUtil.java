@@ -290,17 +290,22 @@ public class MusicUtil {
     }
 
     public static List<Child> limitPlayableMedia(List<Child> toLimit, int position) {
+        if (toLimit == null) return new ArrayList<>();
+
         if (!toLimit.isEmpty() && toLimit.size() > Constants.PLAYABLE_MEDIA_LIMIT) {
             int from = position < Constants.PRE_PLAYABLE_MEDIA ? 0 : position - Constants.PRE_PLAYABLE_MEDIA;
+            from = Math.min(from, toLimit.size());
             int to = Math.min(from + Constants.PLAYABLE_MEDIA_LIMIT, toLimit.size());
 
-            return toLimit.subList(from, to);
+            return new ArrayList<>(toLimit.subList(from, to));
         }
 
         return toLimit;
     }
 
     public static int getPlayableMediaPosition(List<Child> toLimit, int position) {
+        if (toLimit == null) return position;
+
         if (!toLimit.isEmpty() && toLimit.size() > Constants.PLAYABLE_MEDIA_LIMIT) {
             return Math.min(position, Constants.PRE_PLAYABLE_MEDIA);
         }

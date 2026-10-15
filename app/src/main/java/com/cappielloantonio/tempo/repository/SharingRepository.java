@@ -24,7 +24,7 @@ public class SharingRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getShares() != null && response.body().getSubsonicResponse().getShares().getShares() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getShares() != null && response.body().getSubsonicResponse().getShares().getShares() != null) {
                             shares.setValue(response.body().getSubsonicResponse().getShares().getShares());
                         }
                     }

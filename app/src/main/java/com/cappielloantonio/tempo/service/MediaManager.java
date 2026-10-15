@@ -1,16 +1,11 @@
 package com.cappielloantonio.tempo.service;
 
-import android.content.ComponentName;
-
 import androidx.annotation.OptIn;
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.Observer;
 import androidx.media3.common.MediaItem;
+import androidx.media3.common.Player;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.session.MediaBrowser;
-import androidx.media3.session.SessionToken;
 
-import com.cappielloantonio.tempo.App;
 import com.cappielloantonio.tempo.interfaces.MediaIndexCallback;
 import com.cappielloantonio.tempo.model.Chronology;
 import com.cappielloantonio.tempo.repository.ChronologyRepository;
@@ -24,6 +19,7 @@ import com.cappielloantonio.tempo.util.Preferences;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -213,6 +209,18 @@ public class MediaManager {
         }
     }
 
+    public static void enqueue(Player player, List<Child> media, boolean playImmediatelyAfter) {
+        if (player != null && media != null) {
+            if (playImmediatelyAfter && player.getNextMediaItemIndex() != -1) {
+                enqueueDatabase(media, false, player.getNextMediaItemIndex());
+                player.addMediaItems(player.getNextMediaItemIndex(), MappingUtil.mapMediaItems(media));
+            } else {
+                enqueueDatabase(media, false, player.getMediaItemCount());
+                player.addMediaItems(MappingUtil.mapMediaItems(media));
+            }
+        }
+    }
+
     public static void shuffle(ListenableFuture<MediaBrowser> mediaBrowserListenableFuture, List<Child> media, int startIndex, int endIndex) {
         if (mediaBrowserListenableFuture != null && media != null) {
             mediaBrowserListenableFuture.addListener(() -> {
@@ -302,30 +310,18 @@ public class MediaManager {
     }
 
     public static void scrobble(MediaItem mediaItem, boolean submission) {
-        if (mediaItem != null && Preferences.isScrobblingEnabled()) {
+        if (mediaItem != null && mediaItem.mediaMetadata != null && mediaItem.mediaMetadata.extras != null && mediaItem.mediaMetadata.extras.getString("id") != null && Preferences.isScrobblingEnabled()) {
             getSongRepository().scrobble(mediaItem.mediaMetadata.extras.getString("id"), submission);
         }
     }
 
-    @OptIn(markerClass = UnstableApi.class)
-    public static void continuousPlay(MediaItem mediaItem) {
-        if (mediaItem != null && Preferences.isContinuousPlayEnabled() && Preferences.isInstantMixUsable()) {
+    public static void continuousPlay(Player player, MediaItem mediaItem) {
+        if (player != null && mediaItem != null && Preferences.isContinuousPlayEnabled() && Preferences.isInstantMixUsable()) {
             Preferences.setLastInstantMix();
 
-            LiveData<List<Child>> instantMix = getSongRepository().getInstantMix(mediaItem.mediaId, 10);
-            instantMix.observeForever(new Observer<List<Child>>() {
-                @Override
-                public void onChanged(List<Child> media) {
-                    if (media != null) {
-                        ListenableFuture<MediaBrowser> mediaBrowserListenableFuture = new MediaBrowser.Builder(
-                                App.getContext(),
-                                new SessionToken(App.getContext(), new ComponentName(App.getContext(), MediaService.class))
-                        ).buildAsync();
-
-                        enqueue(mediaBrowserListenableFuture, media, true);
-                    }
-
-                    instantMix.removeObserver(this);
+            getSongRepository().fetchInstantMix(mediaItem.mediaId, 10, media -> {
+                if (media != null && !media.isEmpty()) {
+                    enqueue(player, media, true);
                 }
             });
         }
@@ -363,17 +359,21 @@ public class MediaManager {
 
     private static void removeDatabase(List<Child> media, int toRemove) {
         if (toRemove != -1) {
-            media.remove(toRemove);
-            getQueueRepository().insertAll(media, true, 0);
+            List<Child> remaining = new ArrayList<>(media);
+            remaining.remove(toRemove);
+
+            getQueueRepository().insertAll(remaining, true, 0);
         }
     }
 
     private static void removeRangeDatabase(List<Child> media, int fromItem, int toItem) {
-        List<Child> toRemove = media.subList(fromItem, toItem);
+        List<Child> remaining = new ArrayList<>(media);
 
-        media.removeAll(toRemove);
+        for (int i = toItem - 1; i >= fromItem; i--) {
+            remaining.remove(i);
+        }
 
-        getQueueRepository().insertAll(media, true, 0);
+        getQueueRepository().insertAll(remaining, true, 0);
     }
 
     public static void clearDatabase() {

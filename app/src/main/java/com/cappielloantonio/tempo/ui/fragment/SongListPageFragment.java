@@ -39,6 +39,7 @@ import com.cappielloantonio.tempo.util.Constants;
 import com.cappielloantonio.tempo.viewmodel.SongListPageViewModel;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -171,13 +172,13 @@ public class SongListPageFragment extends Fragment implements ClickCallback {
     }
 
     private void initButtons() {
-        songListPageViewModel.getSongList().observe(getViewLifecycleOwner(), songs -> {
+        songListPageViewModel.getSongList(getViewLifecycleOwner()).observe(getViewLifecycleOwner(), songs -> {
             if (bind != null && songs != null) {
                 setSongListPageSorter();
 
                 bind.songListShuffleImageView.setOnClickListener(v -> {
                     Collections.shuffle(songs);
-                    MediaManager.startQueue(mediaBrowserListenableFuture, songs.subList(0, Math.min(25, songs.size())), 0);
+                    MediaManager.startQueue(mediaBrowserListenableFuture, new ArrayList<>(songs.subList(0, Math.min(25, songs.size()))), 0);
                     activity.setBottomSheetInPeek(true);
                 });
             }
@@ -191,7 +192,7 @@ public class SongListPageFragment extends Fragment implements ClickCallback {
 
         songHorizontalAdapter = new SongHorizontalAdapter(this, true, false, null);
         bind.songListRecyclerView.setAdapter(songHorizontalAdapter);
-        songListPageViewModel.getSongList().observe(getViewLifecycleOwner(), songs -> {
+        songListPageViewModel.getSongList(getViewLifecycleOwner()).observe(getViewLifecycleOwner(), songs -> {
             isLoading = false;
             songHorizontalAdapter.setItems(songs);
             setSongListPageSubtitle(songs);

@@ -31,7 +31,7 @@ public class AlbumRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getAlbumList2() != null && response.body().getSubsonicResponse().getAlbumList2().getAlbums() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getAlbumList2() != null && response.body().getSubsonicResponse().getAlbumList2().getAlbums() != null) {
                             listLiveAlbums.setValue(response.body().getSubsonicResponse().getAlbumList2().getAlbums());
                         }
                     }
@@ -54,7 +54,7 @@ public class AlbumRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getStarred2() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getStarred2() != null) {
                             List<AlbumID3> albums = response.body().getSubsonicResponse().getStarred2().getAlbums();
 
                             if (albums != null) {
@@ -105,7 +105,7 @@ public class AlbumRepository {
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
                         List<Child> tracks = new ArrayList<>();
 
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getAlbum() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getAlbum() != null) {
                             if (response.body().getSubsonicResponse().getAlbum().getSongs() != null) {
                                 tracks.addAll(response.body().getSubsonicResponse().getAlbum().getSongs());
                             }
@@ -132,9 +132,9 @@ public class AlbumRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getArtist() != null && response.body().getSubsonicResponse().getArtist().getAlbums() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getArtist() != null && response.body().getSubsonicResponse().getArtist().getAlbums() != null) {
                             List<AlbumID3> albums = response.body().getSubsonicResponse().getArtist().getAlbums();
-                            albums.sort(Comparator.comparing(AlbumID3::getYear));
+                            albums.sort(Comparator.comparing(AlbumID3::getYear, Comparator.nullsLast(Comparator.naturalOrder())));
                             Collections.reverse(albums);
                             artistsAlbum.setValue(albums);
                         }
@@ -158,7 +158,7 @@ public class AlbumRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getAlbum() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getAlbum() != null) {
                             album.setValue(response.body().getSubsonicResponse().getAlbum());
                         }
                     }
@@ -181,7 +181,7 @@ public class AlbumRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getAlbumInfo() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getAlbumInfo() != null) {
                             albumInfo.setValue(response.body().getSubsonicResponse().getAlbumInfo());
                         }
                     }
@@ -204,7 +204,7 @@ public class AlbumRepository {
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
                         List<Child> songs = new ArrayList<>();
 
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getSimilarSongs2() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getSimilarSongs2() != null) {
                             songs.addAll(response.body().getSubsonicResponse().getSimilarSongs2().getSongs());
                         }
 
@@ -255,8 +255,10 @@ public class AlbumRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getAlbumList2() != null && response.body().getSubsonicResponse().getAlbumList2().getAlbums() != null && !response.body().getSubsonicResponse().getAlbumList2().getAlbums().isEmpty()) {
-                            callback.onLoadYear(response.body().getSubsonicResponse().getAlbumList2().getAlbums().get(0).getYear());
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getAlbumList2() != null && response.body().getSubsonicResponse().getAlbumList2().getAlbums() != null && !response.body().getSubsonicResponse().getAlbumList2().getAlbums().isEmpty()) {
+                            Integer year = response.body().getSubsonicResponse().getAlbumList2().getAlbums().get(0).getYear();
+
+                            callback.onLoadYear(year != null ? year : -1);
                         }
                     }
 
@@ -274,9 +276,13 @@ public class AlbumRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getAlbumList2() != null && response.body().getSubsonicResponse().getAlbumList2().getAlbums() != null) {
-                            if (!response.body().getSubsonicResponse().getAlbumList2().getAlbums().isEmpty() && !response.body().getSubsonicResponse().getAlbumList2().getAlbums().isEmpty()) {
-                                callback.onLoadYear(response.body().getSubsonicResponse().getAlbumList2().getAlbums().get(0).getYear());
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getAlbumList2() != null && response.body().getSubsonicResponse().getAlbumList2().getAlbums() != null) {
+                            List<AlbumID3> albums = response.body().getSubsonicResponse().getAlbumList2().getAlbums();
+
+                            if (!albums.isEmpty()) {
+                                Integer year = albums.get(0).getYear();
+
+                                callback.onLoadYear(year != null ? year : -1);
                             } else {
                                 callback.onLoadYear(-1);
                             }

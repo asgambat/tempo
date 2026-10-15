@@ -21,7 +21,7 @@ public class ScanRepository {
                             if (response.body().getSubsonicResponse().getError() != null) {
                                 callback.onError(new Exception(response.body().getSubsonicResponse().getError().getMessage()));
                             } else if (response.body().getSubsonicResponse().getScanStatus() != null) {
-                                callback.onSuccess(response.body().getSubsonicResponse().getScanStatus().isScanning(), response.body().getSubsonicResponse().getScanStatus().getCount());
+                                callback.onSuccess(response.body().getSubsonicResponse().getScanStatus().isScanning(), response.body().getSubsonicResponse().getScanStatus().getCount() != null ? response.body().getSubsonicResponse().getScanStatus().getCount() : 0);
                             }
                         }
                     }
@@ -44,7 +44,7 @@ public class ScanRepository {
                             if (response.body().getSubsonicResponse().getError() != null) {
                                 callback.onError(new Exception(response.body().getSubsonicResponse().getError().getMessage()));
                             } else if (response.body().getSubsonicResponse().getScanStatus() != null) {
-                                callback.onSuccess(response.body().getSubsonicResponse().getScanStatus().isScanning(), response.body().getSubsonicResponse().getScanStatus().getCount());
+                                callback.onSuccess(response.body().getSubsonicResponse().getScanStatus().isScanning(), response.body().getSubsonicResponse().getScanStatus().getCount() != null ? response.body().getSubsonicResponse().getScanStatus().getCount() : 0);
                             }
                         }
                     }

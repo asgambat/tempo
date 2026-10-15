@@ -9,6 +9,7 @@ import com.cappielloantonio.tempo.subsonic.models.Directory;
 import com.cappielloantonio.tempo.subsonic.models.Indexes;
 import com.cappielloantonio.tempo.subsonic.models.MusicFolder;
 
+import java.util.Collections;
 import java.util.List;
 
 import retrofit2.Call;
@@ -27,8 +28,8 @@ public class DirectoryRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getMusicFolders() != null) {
-                            liveMusicFolders.setValue(response.body().getSubsonicResponse().getMusicFolders().getMusicFolders());
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getMusicFolders() != null) {
+                            liveMusicFolders.setValue(response.body().getSubsonicResponse().getMusicFolders().getMusicFolders() != null ? response.body().getSubsonicResponse().getMusicFolders().getMusicFolders() : Collections.emptyList());
                         }
                     }
 
@@ -50,7 +51,7 @@ public class DirectoryRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getIndexes() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getIndexes() != null) {
                             liveIndexes.setValue(response.body().getSubsonicResponse().getIndexes());
                         }
                     }
@@ -73,7 +74,7 @@ public class DirectoryRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getDirectory() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getDirectory() != null) {
                             liveMusicDirectory.setValue(response.body().getSubsonicResponse().getDirectory());
                         }
                     }

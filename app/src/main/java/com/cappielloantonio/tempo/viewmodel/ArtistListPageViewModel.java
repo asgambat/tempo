@@ -47,7 +47,7 @@ public class ArtistListPageViewModel extends AndroidViewModel {
                     List<Download> unique = downloads
                             .stream()
                             .collect(Collectors.collectingAndThen(
-                                    Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(Download::getArtist))), ArrayList::new)
+                                    Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(Download::getArtist, Comparator.nullsFirst(Comparator.naturalOrder())))), ArrayList::new)
                             );
 
                     // TODO

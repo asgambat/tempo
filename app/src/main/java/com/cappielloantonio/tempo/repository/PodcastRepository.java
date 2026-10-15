@@ -11,6 +11,7 @@ import com.cappielloantonio.tempo.subsonic.models.PodcastChannel;
 import com.cappielloantonio.tempo.subsonic.models.PodcastEpisode;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import retrofit2.Call;
@@ -29,8 +30,8 @@ public class PodcastRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getPodcasts() != null) {
-                            livePodcastChannel.setValue(response.body().getSubsonicResponse().getPodcasts().getChannels());
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getPodcasts() != null) {
+                            livePodcastChannel.setValue(response.body().getSubsonicResponse().getPodcasts().getChannels() != null ? response.body().getSubsonicResponse().getPodcasts().getChannels() : Collections.emptyList());
                         }
                     }
 
@@ -52,8 +53,8 @@ public class PodcastRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getNewestPodcasts() != null) {
-                            liveNewestPodcastEpisodes.setValue(response.body().getSubsonicResponse().getNewestPodcasts().getEpisodes());
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getNewestPodcasts() != null) {
+                            liveNewestPodcastEpisodes.setValue(response.body().getSubsonicResponse().getNewestPodcasts().getEpisodes() != null ? response.body().getSubsonicResponse().getNewestPodcasts().getEpisodes() : Collections.emptyList());
                         }
                     }
 

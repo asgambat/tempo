@@ -3,6 +3,8 @@ package com.cappielloantonio.tempo.repository;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
 
+import android.util.Log;
+
 import com.cappielloantonio.tempo.App;
 import com.cappielloantonio.tempo.subsonic.base.ApiResponse;
 import com.cappielloantonio.tempo.subsonic.models.Child;
@@ -10,6 +12,7 @@ import com.cappielloantonio.tempo.subsonic.models.Child;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -27,7 +30,7 @@ public class SongRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getStarred2() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getStarred2() != null) {
                             List<Child> songs = response.body().getSubsonicResponse().getStarred2().getSongs();
 
                             if (songs != null) {
@@ -59,7 +62,7 @@ public class SongRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getSimilarSongs2() != null && response.body().getSubsonicResponse().getSimilarSongs2().getSongs() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getSimilarSongs2() != null && response.body().getSubsonicResponse().getSimilarSongs2().getSongs() != null) {
                             instantMix.setValue(response.body().getSubsonicResponse().getSimilarSongs2().getSongs());
                         }
                     }
@@ -73,6 +76,25 @@ public class SongRepository {
         return instantMix;
     }
 
+    public void fetchInstantMix(String id, int count, Consumer<List<Child>> onSuccess) {
+        App.getSubsonicClientInstance(false)
+                .getBrowsingClient()
+                .getSimilarSongs2(id, count)
+                .enqueue(new Callback<ApiResponse>() {
+                    @Override
+                    public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getSimilarSongs2() != null && response.body().getSubsonicResponse().getSimilarSongs2().getSongs() != null) {
+                            onSuccess.accept(response.body().getSubsonicResponse().getSimilarSongs2().getSongs());
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
+                        Log.e(TAG, "fetchInstantMix failed", t);
+                    }
+                });
+    }
+
     public MutableLiveData<List<Child>> getRandomSample(int number, Integer fromYear, Integer toYear) {
         MutableLiveData<List<Child>> randomSongsSample = new MutableLiveData<>();
 
@@ -84,7 +106,7 @@ public class SongRepository {
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
                         List<Child> songs = new ArrayList<>();
 
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getRandomSongs() != null && response.body().getSubsonicResponse().getRandomSongs().getSongs() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getRandomSongs() != null && response.body().getSubsonicResponse().getRandomSongs().getSongs() != null) {
                             songs.addAll(response.body().getSubsonicResponse().getRandomSongs().getSongs());
                         }
 
@@ -143,8 +165,8 @@ public class SongRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getSongsByGenre() != null) {
-                            songsByGenre.setValue(response.body().getSubsonicResponse().getSongsByGenre().getSongs());
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getSongsByGenre() != null) {
+                            songsByGenre.setValue(response.body().getSubsonicResponse().getSongsByGenre().getSongs() != null ? response.body().getSubsonicResponse().getSongsByGenre().getSongs() : Collections.emptyList());
                         }
                     }
 
@@ -217,7 +239,7 @@ public class SongRepository {
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse().getLyrics() != null) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getLyrics() != null) {
                             lyrics.setValue(response.body().getSubsonicResponse().getLyrics().getValue());
                         }
                     }

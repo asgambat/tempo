@@ -40,7 +40,9 @@ import com.cappielloantonio.tempo.util.MusicUtil;
 import com.cappielloantonio.tempo.viewmodel.PlaylistPageViewModel;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @UnstableApi
@@ -197,13 +199,13 @@ public class PlaylistPageFragment extends Fragment implements ClickCallback {
         playlistPageViewModel.getPlaylistSongLiveList().observe(getViewLifecycleOwner(), songs -> {
             if (bind != null && songs != null) {
                 bind.playlistPagePlayButton.setOnClickListener(v -> {
-                    MediaManager.startQueue(mediaBrowserListenableFuture, songs.subList(0, Math.min(100, songs.size())), 0);
+                    MediaManager.startQueue(mediaBrowserListenableFuture, new ArrayList<>(songs.subList(0, Math.min(100, songs.size()))), 0);
                     activity.setBottomSheetInPeek(true);
                 });
 
                 bind.playlistPageShuffleButton.setOnClickListener(v -> {
                     Collections.shuffle(songs);
-                    MediaManager.startQueue(mediaBrowserListenableFuture, songs.subList(0, Math.min(100, songs.size())), 0);
+                    MediaManager.startQueue(mediaBrowserListenableFuture, new ArrayList<>(songs.subList(0, Math.min(100, songs.size()))), 0);
                     activity.setBottomSheetInPeek(true);
                 });
             }

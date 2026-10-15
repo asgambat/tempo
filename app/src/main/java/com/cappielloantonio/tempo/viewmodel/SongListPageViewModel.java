@@ -30,7 +30,8 @@ public class SongListPageViewModel extends AndroidViewModel {
     public ArtistID3 artist;
     public AlbumID3 album;
 
-    private MutableLiveData<List<Child>> songList;
+    private final MutableLiveData<List<Child>> songList = new MutableLiveData<>(new ArrayList<>());
+    private boolean songListRequested = false;
 
     public ArrayList<String> filters = new ArrayList<>();
     public ArrayList<String> filterNames = new ArrayList<>();
@@ -46,29 +47,39 @@ public class SongListPageViewModel extends AndroidViewModel {
         artistRepository = new ArtistRepository();
     }
 
-    public LiveData<List<Child>> getSongList() {
-        songList = new MutableLiveData<>(new ArrayList<>());
+    public LiveData<List<Child>> getSongList(LifecycleOwner owner) {
+        if (!songListRequested) {
+            songListRequested = true;
 
-        if (title == null) {
-            return songList;
-        }
-
-        switch (title) {
-            case Constants.MEDIA_BY_GENRE:
-                if (genre != null) songList = songRepository.getSongsByGenre(genre.getGenre(), 0);
-                break;
-            case Constants.MEDIA_BY_ARTIST:
-                if (artist != null) songList = artistRepository.getTopSongs(artist.getName(), 50);
-                break;
-            case Constants.MEDIA_BY_GENRES:
-                songList = songRepository.getSongsByGenres(filters);
-                break;
-            case Constants.MEDIA_BY_YEAR:
-                songList = songRepository.getRandomSample(maxNumberByYear, year, year + 10);
-                break;
-            case Constants.MEDIA_STARRED:
-                songList = songRepository.getStarredSongs(false, -1);
-                break;
+            if (title != null) {
+                switch (title) {
+                    case Constants.MEDIA_BY_GENRE:
+                        if (genre != null) songRepository.getSongsByGenre(genre.getGenre(), 0).observe(owner, songs -> {
+                            if (songs != null) songList.setValue(songs);
+                        });
+                        break;
+                    case Constants.MEDIA_BY_ARTIST:
+                        if (artist != null) artistRepository.getTopSongs(artist.getName(), 50).observe(owner, songs -> {
+                            if (songs != null) songList.setValue(songs);
+                        });
+                        break;
+                    case Constants.MEDIA_BY_GENRES:
+                        songRepository.getSongsByGenres(filters).observe(owner, songs -> {
+                            if (songs != null) songList.setValue(songs);
+                        });
+                        break;
+                    case Constants.MEDIA_BY_YEAR:
+                        songRepository.getRandomSample(maxNumberByYear, year, year + 10).observe(owner, songs -> {
+                            if (songs != null) songList.setValue(songs);
+                        });
+                        break;
+                    case Constants.MEDIA_STARRED:
+                        songRepository.getStarredSongs(false, -1).observe(owner, songs -> {
+                            if (songs != null) songList.setValue(songs);
+                        });
+                        break;
+                }
+            }
         }
 
         return songList;

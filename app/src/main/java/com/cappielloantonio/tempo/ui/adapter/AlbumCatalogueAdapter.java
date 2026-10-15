@@ -154,27 +154,27 @@ public class AlbumCatalogueAdapter extends RecyclerView.Adapter<AlbumCatalogueAd
     public void sort(String order) {
         switch (order) {
             case Constants.ALBUM_ORDER_BY_NAME:
-                albums.sort(Comparator.comparing(AlbumID3::getName));
+                albums.sort(Comparator.comparing(AlbumID3::getName, Comparator.nullsLast(Comparator.naturalOrder())));
                 break;
             case Constants.ALBUM_ORDER_BY_ARTIST:
-                albums.sort(Comparator.comparing(AlbumID3::getArtist));
+                albums.sort(Comparator.comparing(AlbumID3::getArtist, Comparator.nullsLast(Comparator.naturalOrder())));
                 break;
             case Constants.ALBUM_ORDER_BY_YEAR:
-                albums.sort(Comparator.comparing(AlbumID3::getYear));
+                albums.sort(Comparator.comparing(AlbumID3::getYear, Comparator.nullsLast(Comparator.naturalOrder())));
                 break;
             case Constants.ALBUM_ORDER_BY_RANDOM:
                 Collections.shuffle(albums);
                 break;
             case Constants.ALBUM_ORDER_BY_RECENTLY_ADDED:
-                albums.sort(Comparator.comparing(AlbumID3::getCreated));
+                albums.sort(Comparator.comparing(AlbumID3::getCreated, Comparator.nullsLast(Comparator.naturalOrder())));
                 Collections.reverse(albums);
                 break;
             case Constants.ALBUM_ORDER_BY_RECENTLY_PLAYED:
-                albums.sort(Comparator.comparing(AlbumID3::getPlayed));
+                albums.sort(Comparator.comparing(AlbumID3::getPlayed, Comparator.nullsLast(Comparator.naturalOrder())));
                 Collections.reverse(albums);
                 break;
             case Constants.ALBUM_ORDER_BY_MOST_PLAYED:
-                albums.sort(Comparator.comparing(AlbumID3::getPlayCount));
+                albums.sort(Comparator.comparing(AlbumID3::getPlayCount, Comparator.nullsLast(Comparator.naturalOrder())));
                 Collections.reverse(albums);
                 break;
         }

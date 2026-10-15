@@ -122,7 +122,7 @@ class MediaService : MediaLibraryService(), SessionAvailabilityListener {
                 MediaManager.scrobble(player.currentMediaItem, false)
 
                 if (player.currentMediaItemIndex + 1 == player.mediaItemCount)
-                    MediaManager.continuousPlay(player.currentMediaItem)
+                    MediaManager.continuousPlay(player, player.currentMediaItem)
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {

@@ -159,7 +159,7 @@ public class ArtistHorizontalAdapter extends RecyclerView.Adapter<ArtistHorizont
     public void sort(String order) {
         switch (order) {
             case Constants.ARTIST_ORDER_BY_NAME:
-                artists.sort(Comparator.comparing(ArtistID3::getName));
+                artists.sort(Comparator.comparing(ArtistID3::getName, Comparator.nullsLast(Comparator.naturalOrder())));
                 break;
             case Constants.ARTIST_ORDER_BY_MOST_RECENTLY_STARRED:
                 artists.sort(Comparator.comparing(ArtistID3::getStarred, Comparator.nullsLast(Comparator.reverseOrder())));
