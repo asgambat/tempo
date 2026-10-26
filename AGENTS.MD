@@ -9,8 +9,8 @@
 ## 1. Il progetto in 30 secondi
 
 - **Tempo** — client musicale open source (GPLv3) per server **Subsonic / OpenSubsonic**, nativo Android, UI *View-based* (niente Jetpack Compose), single-activity + Fragment + ViewBinding.
-- Single module `:app`, namespace `com.cappielloantonio.tempo`. Versione di riferimento: **3.9.0 (versionCode 26)**.
-- **Nessun framework DI** (niente Hilt/Dagger), **nessuna coroutine/RxJava**: si usano singleton espliciti (`App`, `AppDatabase`), `LiveData`/`MutableLiveData`, Retrofit in enqueue e `Thread` espliciti per le scritture Room.
+- Single module `:app`, namespace `com.cappielloantonio.tempo`. Versione di riferimento: **4.0.1 (versionCode 28)**.
+- **Nessun framework DI** (niente Hilt/Dagger), **nessuna coroutine/RxJava**: si usano singleton espliciti (`App`, `AppDatabase`), `LiveData`/`MutableLiveData`, Retrofit in enqueue. Le scritture Room passano da un `ExecutorService` a thread singolo in `QueueRepository`; gli altri repository usano `Thread` espliciti per le letture sincrone.
 - Server remoto: branch `main` (stabile) e `develop` (lavoro corrente).
 - Il client REST per GitHub (check aggiornamenti) è separato, nel package `github/`.
 
@@ -161,9 +161,10 @@ Mappa dei package sotto `app/src/main/java/com/cappielloantonio/tempo/`:
 
 ## 8. Insidie note e debito tecnico (leggere prima di rifattorizzare)
 
-- `onFailure` dei callback Retrofit è spesso **vuoto**: è lo stato di fatto, ma nel codice nuovo logga almeno l'errore (`Log.e(TAG, ...)`), non copiare il vuoto.
+- `onFailure` dei callback Retrofit: dopo lo sweep del 2026-10-25 non ci sono più callback vuoti (repository con `Log.e(TAG, "Request failed", t)` o `printStackTrace()` nei metodi più vecchi, `ArtistCatalogueViewModel` con il proprio `TAG`). Nel codice nuovo logga sempre l'errore con `Log.e(TAG, ...)`, non reintrodurre il vuoto.
 - L'interceptor di logging OkHttp ora scrive il livello **BODY solo in build debuggable**: in release è `NONE` (le URL del client Subsonico contengono `p`/`t`/`s` di autenticazione). Il client GitHub usa `BASIC` in debug, `NONE` in release — non reintrodurre `BODY` incondizionato.
-- Scritture Room via `Thread + join()` (`QueueRepository`): pattern legacy bloccante — non estenderlo; per codice nuovo preferisci semplici thread/executor espliciti o LiveData.
+- Le URL costruite a mano (`MusicUtil.getStreamUri/getDownloadUri/getTranscodedDownloadUri`, `CustomGlideRequest.createUrl`) contengono le stesse credenziali: non vanno loggate, nemmeno a livello debug.
+- Scritture Room: `QueueRepository` serializza mutazioni e letture sincrone su un unico `ExecutorService` a thread singolo (`QUEUE_EXECUTOR`), così la UI non aspetta il ciclo delete-all/insert-all e le scritture non si accavallano. Gli altri repository usano ancora `Thread + join()` per le letture sincrone: pattern legacy, non estenderlo.
 - Il fragment si riconnette al `MediaBrowser` in `onStart` e lo rilascia in `onStop` (`ListenableFuture<MediaBrowser>`): rispetta il ciclo, altrimenti il playback remoto si disallinea.
 - `MusicUtil.limitPlayableMedia` limita la coda a 100 elementi (`PLAYABLE_MEDIA_LIMIT`, pre-play 15): tenersene conto negli adapter.
 - Cambio server locale/remoto (`Preferences.switchInUseServerAddress`) con cooldown 15 s (`isServerSwitchable`): non rimuovere i timer.

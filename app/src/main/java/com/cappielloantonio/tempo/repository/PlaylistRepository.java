@@ -1,5 +1,7 @@
 package com.cappielloantonio.tempo.repository;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -20,6 +22,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class PlaylistRepository {
+    private static final String TAG = "PlaylistRepository";
+
     private final PlaylistDao playlistDao = AppDatabase.getInstance().playlistDao();
     public MutableLiveData<List<Playlist>> getPlaylists(boolean random, int size) {
         MutableLiveData<List<Playlist>> listLivePlaylists = new MutableLiveData<>(new ArrayList<>());
@@ -44,6 +48,7 @@ public class PlaylistRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
 
@@ -67,6 +72,7 @@ public class PlaylistRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
 
@@ -85,7 +91,7 @@ public class PlaylistRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
     }
@@ -102,7 +108,7 @@ public class PlaylistRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
     }
@@ -119,7 +125,7 @@ public class PlaylistRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
     }
@@ -136,7 +142,7 @@ public class PlaylistRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
     }
@@ -153,7 +159,7 @@ public class PlaylistRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
     }

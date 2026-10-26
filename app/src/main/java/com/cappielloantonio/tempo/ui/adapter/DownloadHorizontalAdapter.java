@@ -65,9 +65,6 @@ public class DownloadHorizontalAdapter extends RecyclerView.Adapter<DownloadHori
             case Constants.DOWNLOAD_TYPE_GENRE:
                 initGenreLayout(holder, position);
                 break;
-            case Constants.DOWNLOAD_TYPE_YEAR:
-                initYearLayout(holder, position);
-                break;
         }
     }
 
@@ -116,8 +113,6 @@ public class DownloadHorizontalAdapter extends RecyclerView.Adapter<DownloadHori
                 return filterSong(filterKey, filterValue, songs.stream().filter(song -> Objects.nonNull(song.getArtistId())).filter(Util.distinctByKey(Child::getArtistId)).collect(Collectors.toList()));
             case Constants.DOWNLOAD_TYPE_GENRE:
                 return filterSong(filterKey, filterValue, songs.stream().filter(song -> Objects.nonNull(song.getGenre())).filter(Util.distinctByKey(Child::getGenre)).collect(Collectors.toList()));
-            case Constants.DOWNLOAD_TYPE_YEAR:
-                return filterSong(filterKey, filterValue, songs.stream().filter(song -> Objects.nonNull(song.getYear())).filter(Util.distinctByKey(Child::getYear)).collect(Collectors.toList()));
         }
 
         return Collections.emptyList();
@@ -263,17 +258,6 @@ public class DownloadHorizontalAdapter extends RecyclerView.Adapter<DownloadHori
         holder.item.divider.setVisibility(View.GONE);
     }
 
-    private void initYearLayout(ViewHolder holder, int position) {
-        Child song = grouped.get(position);
-
-        holder.item.downloadedItemTitleTextView.setText(String.valueOf(song.getYear()));
-        holder.item.downloadedItemSubtitleTextView.setText(holder.itemView.getContext().getString(R.string.download_item_single_subtitle_formatter, countSong(Constants.DOWNLOAD_TYPE_YEAR, song.getYear().toString(), songs)));
-
-        holder.item.itemCoverImageView.setVisibility(View.GONE);
-        holder.item.downloadedItemMoreButton.setVisibility(View.VISIBLE);
-        holder.item.divider.setVisibility(View.GONE);
-    }
-
     public class ViewHolder extends RecyclerView.ViewHolder {
         ItemHorizontalDownloadBinding item;
 
@@ -292,53 +276,54 @@ public class DownloadHorizontalAdapter extends RecyclerView.Adapter<DownloadHori
         }
 
         public void onClick() {
+            int position = getBindingAdapterPosition();
+
+            if (position == RecyclerView.NO_POSITION) return;
+
             Bundle bundle = new Bundle();
 
             switch (view) {
                 case Constants.DOWNLOAD_TYPE_TRACK:
                     bundle.putParcelableArrayList(Constants.TRACKS_OBJECT, new ArrayList<>(grouped));
-                    bundle.putInt(Constants.ITEM_POSITION, getBindingAdapterPosition());
+                    bundle.putInt(Constants.ITEM_POSITION, position);
                     click.onMediaClick(bundle);
                     break;
                 case Constants.DOWNLOAD_TYPE_ALBUM:
-                    bundle.putString(Constants.DOWNLOAD_TYPE_ALBUM, grouped.get(getBindingAdapterPosition()).getAlbumId());
+                    bundle.putString(Constants.DOWNLOAD_TYPE_ALBUM, grouped.get(position).getAlbumId());
                     click.onAlbumClick(bundle);
                     break;
                 case Constants.DOWNLOAD_TYPE_ARTIST:
-                    bundle.putString(Constants.DOWNLOAD_TYPE_ARTIST, grouped.get(getBindingAdapterPosition()).getArtistId());
+                    bundle.putString(Constants.DOWNLOAD_TYPE_ARTIST, grouped.get(position).getArtistId());
                     click.onArtistClick(bundle);
                     break;
                 case Constants.DOWNLOAD_TYPE_GENRE:
-                    bundle.putString(Constants.DOWNLOAD_TYPE_GENRE, grouped.get(getBindingAdapterPosition()).getGenre());
+                    bundle.putString(Constants.DOWNLOAD_TYPE_GENRE, grouped.get(position).getGenre());
                     click.onGenreClick(bundle);
-                    break;
-                case Constants.DOWNLOAD_TYPE_YEAR:
-                    bundle.putString(Constants.DOWNLOAD_TYPE_YEAR, grouped.get(getBindingAdapterPosition()).getYear().toString());
-                    click.onYearClick(bundle);
                     break;
             }
         }
 
         private boolean onLongClick() {
+            int position = getBindingAdapterPosition();
+
+            if (position == RecyclerView.NO_POSITION) return false;
+
             ArrayList<Child> filteredSongs = new ArrayList<>();
 
             Bundle bundle = new Bundle();
 
             switch (view) {
                 case Constants.DOWNLOAD_TYPE_TRACK:
-                    filteredSongs.add(grouped.get(getBindingAdapterPosition()));
+                    filteredSongs.add(grouped.get(position));
                     break;
                 case Constants.DOWNLOAD_TYPE_ALBUM:
-                    filteredSongs.addAll(filterSong(Constants.DOWNLOAD_TYPE_ALBUM, grouped.get(getBindingAdapterPosition()).getAlbumId(), songs));
+                    filteredSongs.addAll(filterSong(Constants.DOWNLOAD_TYPE_ALBUM, grouped.get(position).getAlbumId(), songs));
                     break;
                 case Constants.DOWNLOAD_TYPE_ARTIST:
-                    filteredSongs.addAll(filterSong(Constants.DOWNLOAD_TYPE_ARTIST, grouped.get(getBindingAdapterPosition()).getArtistId(), songs));
+                    filteredSongs.addAll(filterSong(Constants.DOWNLOAD_TYPE_ARTIST, grouped.get(position).getArtistId(), songs));
                     break;
                 case Constants.DOWNLOAD_TYPE_GENRE:
-                    filteredSongs.addAll(filterSong(Constants.DOWNLOAD_TYPE_GENRE, grouped.get(getBindingAdapterPosition()).getGenre(), songs));
-                    break;
-                case Constants.DOWNLOAD_TYPE_YEAR:
-                    filteredSongs.addAll(filterSong(Constants.DOWNLOAD_TYPE_YEAR, grouped.get(getBindingAdapterPosition()).getYear().toString(), songs));
+                    filteredSongs.addAll(filterSong(Constants.DOWNLOAD_TYPE_GENRE, grouped.get(position).getGenre(), songs));
                     break;
             }
 

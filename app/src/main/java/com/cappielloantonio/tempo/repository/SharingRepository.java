@@ -1,5 +1,7 @@
 package com.cappielloantonio.tempo.repository;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
 
@@ -15,6 +17,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class SharingRepository {
+    private static final String TAG = "SharingRepository";
+
     public MutableLiveData<List<Share>> getShares() {
         MutableLiveData<List<Share>> shares = new MutableLiveData<>(new ArrayList<>());
 
@@ -31,7 +35,7 @@ public class SharingRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
 
@@ -75,7 +79,7 @@ public class SharingRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
     }
@@ -92,7 +96,7 @@ public class SharingRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
     }

@@ -83,10 +83,10 @@ private void pingServer() {
 
 ## Criteri di done
 
-- [ ] `pingServer()` non accumula observer: tutte le letture single-shot passano da `observeOnce`.
-- [ ] Ogni `onFailure` vuoto nei repository logga con `Log.e(TAG, ..., t)`.
-- [ ] `SongListPageViewModel` non ha più il blocco `songListRequested`: nuova richiesta a ogni creazione della view.
-- [ ] Compilazione OK.
+- [x] `pingServer()` non accumula observer: tutte le letture single-shot passano da `observeOnce`.
+- [x] Ogni `onFailure` vuoto nei repository logga con `Log.e(TAG, ..., t)`. (2026-10-25: 50 callback in 13 repository; `TAG` e `import android.util.Log` aggiunti dove mancavano.)
+- [x] `SongListPageViewModel` non ha più il blocco `songListRequested`: nuova richiesta a ogni creazione della view. (2026-10-25: richiesta esplicita `requestSongList(owner)` chiamata una volta in `onCreateView`, observer su `getSongList()` senza argomenti per evitare la doppia richiesta.)
+- [ ] Compilazione OK (2026-10-25: `compileTempoDebugJavaWithJavac` exit 0; `notquitemy` e `play` non verificate, build interrotte su richiesta per instabilità dell'host).
 
 ## Manutenzione
 

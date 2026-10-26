@@ -1,5 +1,7 @@
 package com.cappielloantonio.tempo.repository;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
 
@@ -12,6 +14,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class OpenRepository {
+    private static final String TAG = "OpenRepository";
+
     public MutableLiveData<LyricsList> getLyricsBySongId(String id) {
         MutableLiveData<LyricsList> lyricsList = new MutableLiveData<>();
 
@@ -28,7 +32,7 @@ public class OpenRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
 

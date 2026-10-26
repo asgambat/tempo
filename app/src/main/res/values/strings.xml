@@ -64,6 +64,8 @@
     <string name="description_empty_title">No description available</string>
     <string name="disc_titlefull">Disc %1$s - %2$s</string>
     <string name="disc_titleless">Disc %1$s</string>
+    <string name="directory_page_no_playable_songs">No playable songs in this folder</string>
+    <string name="directory_page_play_with_subfolders_button">Play with subfolders</string>
     <string name="download_directory_dialog_negative_button">Cancel</string>
     <string name="download_directory_dialog_positive_button">Download</string>
     <string name="download_directory_dialog_summary">All tracks in this folder will be downloaded. Tracks present in subfolders will not be downloaded.</string>
@@ -295,6 +297,9 @@
     <string name="settings_github_title">Github</string>
     <string name="settings_image_size">Set image resolution</string>
     <string name="settings_language">Language</string>
+    <string name="settings_notification_permission_summary_disabled">Disabled — tap to open the system settings</string>
+    <string name="settings_notification_permission_summary_enabled">Enabled</string>
+    <string name="settings_notification_permission_title">Playback notifications</string>
     <string name="settings_logout_title">Log out</string>
     <string name="settings_max_bitrate_download">Bitrate for downloads</string>
     <string name="settings_max_bitrate_mobile">Bitrate in mobile</string>

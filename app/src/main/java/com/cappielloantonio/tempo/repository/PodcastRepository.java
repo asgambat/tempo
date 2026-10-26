@@ -37,7 +37,7 @@ public class PodcastRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
 
@@ -60,7 +60,7 @@ public class PodcastRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
 
@@ -79,7 +79,7 @@ public class PodcastRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
     }
@@ -96,7 +96,7 @@ public class PodcastRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
     }
@@ -113,7 +113,7 @@ public class PodcastRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
     }
@@ -130,7 +130,7 @@ public class PodcastRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
     }
@@ -147,7 +147,7 @@ public class PodcastRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
     }

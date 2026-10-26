@@ -11,6 +11,10 @@
             android:title="@string/settings_scan_title" />
 
         <Preference
+            android:key="notification_permission"
+            android:title="@string/settings_notification_permission_title" />
+
+        <Preference
             android:key="logout"
             android:title="@string/settings_logout_title"/>
     </PreferenceCategory>

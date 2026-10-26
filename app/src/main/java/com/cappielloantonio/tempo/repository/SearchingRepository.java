@@ -1,5 +1,7 @@
 package com.cappielloantonio.tempo.repository;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
 
@@ -23,6 +25,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class SearchingRepository {
+    private static final String TAG = "SearchingRepository";
+
     private final RecentSearchDao recentSearchDao = AppDatabase.getInstance().recentSearchDao();
 
     public MutableLiveData<SearchResult2> search2(String query) {
@@ -41,7 +45,7 @@ public class SearchingRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
 
@@ -64,7 +68,7 @@ public class SearchingRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
 
@@ -110,7 +114,7 @@ public class SearchingRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
 

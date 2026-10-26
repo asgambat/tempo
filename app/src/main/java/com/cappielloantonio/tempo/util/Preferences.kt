@@ -16,6 +16,7 @@ object Preferences {
     private const val SALT = "salt"
     private const val LOW_SECURITY = "low_security"
     private const val BATTERY_OPTIMIZATION = "battery_optimization"
+    private const val NOTIFICATION_PERMISSION_REQUESTED = "notification_permission_requested"
     private const val SERVER_ID = "server_id"
     private const val OPEN_SUBSONIC = "open_subsonic"
     private const val OPEN_SUBSONIC_EXTENSIONS = "open_subsonic_extensions"
@@ -204,6 +205,16 @@ object Preferences {
     @JvmStatic
     fun dontAskForOptimization() {
         App.getInstance().preferences.edit().putBoolean(BATTERY_OPTIMIZATION, false).apply()
+    }
+
+    @JvmStatic
+    fun isNotificationPermissionRequested(): Boolean {
+        return App.getInstance().preferences.getBoolean(NOTIFICATION_PERMISSION_REQUESTED, false)
+    }
+
+    @JvmStatic
+    fun setNotificationPermissionRequested() {
+        App.getInstance().preferences.edit().putBoolean(NOTIFICATION_PERMISSION_REQUESTED, true).apply()
     }
 
     @JvmStatic

@@ -1,5 +1,7 @@
 package com.cappielloantonio.tempo.repository;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
 
@@ -19,6 +21,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class ArtistRepository {
+    private static final String TAG = "ArtistRepository";
+
     public MutableLiveData<List<ArtistID3>> getStarredArtists(boolean random, int size) {
         MutableLiveData<List<ArtistID3>> starredArtists = new MutableLiveData<>(new ArrayList<>());
 
@@ -44,7 +48,7 @@ public class ArtistRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
 
@@ -82,6 +86,7 @@ public class ArtistRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
 
@@ -110,7 +115,7 @@ public class ArtistRepository {
 
                         @Override
                         public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                            Log.e(TAG, "Request failed", t);
                         }
                     });
         }
@@ -132,7 +137,7 @@ public class ArtistRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
 
@@ -155,7 +160,7 @@ public class ArtistRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
 
@@ -174,7 +179,7 @@ public class ArtistRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
     }
@@ -195,7 +200,7 @@ public class ArtistRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
 
@@ -218,7 +223,7 @@ public class ArtistRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
 
@@ -247,7 +252,7 @@ public class ArtistRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
 
@@ -270,7 +275,7 @@ public class ArtistRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
 

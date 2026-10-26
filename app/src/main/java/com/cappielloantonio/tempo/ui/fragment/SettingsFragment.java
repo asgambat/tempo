@@ -1,10 +1,15 @@
 package com.cappielloantonio.tempo.ui.fragment;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.media.audiofx.AudioEffect;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.LayoutInflater;
+import android.provider.Settings;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -15,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.content.ContextCompat;
 import androidx.core.os.LocaleListCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.util.UnstableApi;
@@ -99,6 +105,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         actionChangeDownloadStorage();
         actionDeleteDownloadStorage();
         actionKeepScreenOn();
+        initNotificationPermissionPreference();
     }
 
     @Override
@@ -310,6 +317,36 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 if (isScanning) getScanStatus();
             }
         });
+    }
+
+    private void initNotificationPermissionPreference() {
+        Preference notificationPermission = findPreference("notification_permission");
+
+        if (notificationPermission == null) return;
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            notificationPermission.setVisible(false);
+            return;
+        }
+
+        boolean granted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+
+        notificationPermission.setSummary(granted ? R.string.settings_notification_permission_summary_enabled : R.string.settings_notification_permission_summary_disabled);
+        notificationPermission.setOnPreferenceClickListener(preference -> {
+            openNotificationSettings();
+            return true;
+        });
+    }
+
+    private void openNotificationSettings() {
+        Intent intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                .putExtra(Settings.EXTRA_APP_PACKAGE, requireContext().getPackageName());
+
+        try {
+            startActivity(intent);
+        } catch (Exception exception) {
+            Log.e(TAG, "Unable to open the notification settings", exception);
+        }
     }
 
     private void actionKeepScreenOn() {

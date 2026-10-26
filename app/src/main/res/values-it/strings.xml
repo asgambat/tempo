@@ -64,6 +64,8 @@
 	<string name="description_empty_title">Descrizione non disponibile</string>
 	<string name="disc_titlefull">Disco %1$s - %2$s</string>
 	<string name="disc_titleless">Disco %1$s</string>
+	<string name="directory_page_no_playable_songs">Nessun brano riproducibile in questa cartella</string>
+	<string name="directory_page_play_with_subfolders_button">Riproduci con le sottocartelle</string>
 	<string name="download_directory_dialog_negative_button">Annulla</string>
 	<string name="download_directory_dialog_positive_button">Scarica</string>
 	<string name="download_directory_dialog_summary">Tutti i brani in questa cartella verranno scaricati. I brani nelle sottocartelle non verranno scaricati.</string>
@@ -289,6 +291,9 @@
 	<string name="settings_github_title">Github</string>
 	<string name="settings_image_size">Imposta risoluzione delle immagini</string>
 	<string name="settings_language">Lingua</string>
+	<string name="settings_notification_permission_summary_disabled">Disattivate — tocca per aprire le impostazioni di sistema</string>
+	<string name="settings_notification_permission_summary_enabled">Attive</string>
+	<string name="settings_notification_permission_title">Notifiche di riproduzione</string>
 	<string name="settings_logout_title">Esci</string>
 	<string name="settings_max_bitrate_download">Bitrate per download</string>
 	<string name="settings_max_bitrate_mobile">Bitrate su mobile</string>

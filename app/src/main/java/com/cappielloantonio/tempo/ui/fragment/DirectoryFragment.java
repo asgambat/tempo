@@ -8,11 +8,13 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.session.MediaBrowser;
@@ -25,9 +27,11 @@ import com.cappielloantonio.tempo.databinding.FragmentDirectoryBinding;
 import com.cappielloantonio.tempo.interfaces.ClickCallback;
 import com.cappielloantonio.tempo.interfaces.DialogClickCallback;
 import com.cappielloantonio.tempo.model.Download;
+import com.cappielloantonio.tempo.repository.DirectoryRepository;
 import com.cappielloantonio.tempo.service.MediaManager;
 import com.cappielloantonio.tempo.service.MediaService;
 import com.cappielloantonio.tempo.subsonic.models.Child;
+import com.cappielloantonio.tempo.subsonic.models.Directory;
 import com.cappielloantonio.tempo.ui.activity.MainActivity;
 import com.cappielloantonio.tempo.ui.adapter.MusicDirectoryAdapter;
 import com.cappielloantonio.tempo.ui.dialog.DownloadDirectoryDialog;
@@ -49,6 +53,10 @@ public class DirectoryFragment extends Fragment implements ClickCallback {
     private DirectoryViewModel directoryViewModel;
 
     private MusicDirectoryAdapter musicDirectoryAdapter;
+
+    private Directory directory;
+
+    private DirectoryRepository.SongsRequest subfoldersRequest;
 
     private ListenableFuture<MediaBrowser> mediaBrowserListenableFuture;
 
@@ -77,6 +85,7 @@ public class DirectoryFragment extends Fragment implements ClickCallback {
         directoryViewModel = new ViewModelProvider(requireActivity()).get(DirectoryViewModel.class);
 
         initAppBar();
+        initSubfoldersPlayButton();
         initDirectoryListView();
 
         return view;
@@ -97,7 +106,9 @@ public class DirectoryFragment extends Fragment implements ClickCallback {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        cancelSubfoldersRequest();
         bind = null;
+        directory = null;
     }
 
     @Override
@@ -137,6 +148,14 @@ public class DirectoryFragment extends Fragment implements ClickCallback {
         if (bind != null) {
             bind.toolbar.setNavigationOnClickListener(v -> activity.navController.navigateUp());
             bind.directoryBackImageView.setOnClickListener(v -> activity.navController.navigateUp());
+
+            bind.appBarLayout.addOnOffsetChangedListener((appBarLayout, verticalOffset) -> {
+                if ((bind.directoryInfoSector.getHeight() + verticalOffset) < (2 * ViewCompat.getMinimumHeight(bind.toolbar))) {
+                    bind.toolbar.setTitle(directory != null ? directory.getName() : getString(R.string.empty_string));
+                } else {
+                    bind.toolbar.setTitle(R.string.empty_string);
+                }
+            });
         }
     }
 
@@ -151,15 +170,12 @@ public class DirectoryFragment extends Fragment implements ClickCallback {
                 return;
             }
 
-            bind.appBarLayout.addOnOffsetChangedListener((appBarLayout, verticalOffset) -> {
-                if ((bind.directoryInfoSector.getHeight() + verticalOffset) < (2 * ViewCompat.getMinimumHeight(bind.toolbar))) {
-                    bind.toolbar.setTitle(directory.getName());
-                } else {
-                    bind.toolbar.setTitle(R.string.empty_string);
-                }
-            });
+            cancelSubfoldersRequest();
 
+            this.directory = directory;
             bind.directoryTitleLabel.setText(directory.getName());
+            bind.directorySubfoldersPlayButton.setVisibility(hasSubDirectories(directory) ? View.VISIBLE : View.GONE);
+            bind.directorySubfoldersPlayButton.setEnabled(true);
 
             musicDirectoryAdapter.setItems(directory.getChildren());
 
@@ -173,6 +189,48 @@ public class DirectoryFragment extends Fragment implements ClickCallback {
                 );
             }
         });
+    }
+
+    private void initSubfoldersPlayButton() {
+        bind.directorySubfoldersPlayButton.setOnClickListener(v -> playDirectoryIncludingSubfolders());
+    }
+
+    private void playDirectoryIncludingSubfolders() {
+        if (bind == null || directory == null) return;
+
+        bind.directorySubfoldersPlayButton.setEnabled(false);
+
+        cancelSubfoldersRequest();
+
+        subfoldersRequest = directoryViewModel.getSongsIncludingSubfolders(directory, Constants.DIRECTORY_SUBFOLDERS_MAX_DEPTH, songs -> {
+            subfoldersRequest = null;
+
+            if (bind == null) return;
+
+            bind.directorySubfoldersPlayButton.setEnabled(true);
+
+            if (!getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED)) {
+                return;
+            }
+
+            if (songs == null || songs.isEmpty()) {
+                Toast.makeText(requireContext(), getString(R.string.directory_page_no_playable_songs), Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            MediaManager.startQueue(mediaBrowserListenableFuture, songs, 0);
+        });
+    }
+
+    private void cancelSubfoldersRequest() {
+        if (subfoldersRequest != null) {
+            subfoldersRequest.cancel();
+            subfoldersRequest = null;
+        }
+    }
+
+    private boolean hasSubDirectories(Directory directory) {
+        return directory.getChildren() != null && directory.getChildren().stream().anyMatch(Child::isDir);
     }
 
     private void initializeMediaBrowser() {

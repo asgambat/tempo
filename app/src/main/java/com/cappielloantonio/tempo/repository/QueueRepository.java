@@ -1,5 +1,7 @@
 package com.cappielloantonio.tempo.repository;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -14,9 +16,10 @@ import com.cappielloantonio.tempo.subsonic.models.PlayQueue;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-
-import android.util.Log;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -25,6 +28,14 @@ import retrofit2.Response;
 public class QueueRepository {
     private static final String TAG = "QueueRepository";
 
+    /**
+     * Queue mutations are serialized on a single background thread: the caller (usually the UI
+     * thread, through {@code MediaManager}) never waits for the delete-all/insert-all round trip
+     * and concurrent enqueues cannot interleave with each other. Reads that still return a value
+     * synchronously wait on the same thread, so they always observe the pending writes in order.
+     */
+    private static final ExecutorService QUEUE_EXECUTOR = Executors.newSingleThreadExecutor();
+
     private final QueueDao queueDao = AppDatabase.getInstance().queueDao();
 
     public LiveData<List<Queue>> getLiveQueue() {
@@ -32,23 +43,19 @@ public class QueueRepository {
     }
 
     public List<Child> getMedia() {
-        List<Child> media = new ArrayList<>();
+        List<Queue> media = awaitOnQueueThread(queueDao::getAllSimple);
 
-        GetMediaThreadSafe getMedia = new GetMediaThreadSafe(queueDao);
-        Thread thread = new Thread(getMedia);
-        thread.start();
-
-        try {
-            thread.join();
-            media = getMedia.getMedia().stream()
-                    .map(Child.class::cast)
-                    .collect(Collectors.toList());
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if (media == null) {
+            return new ArrayList<>();
         }
 
-        return media;
+        List<Child> children = new ArrayList<>();
+
+        for (Queue queueItem : media) {
+            children.add(queueItem);
+        }
+
+        return children;
     }
 
     public MutableLiveData<PlayQueue> getPlayQueue() {
@@ -86,302 +93,131 @@ public class QueueRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
     }
 
+    /**
+     * Inserts a single item and reorders the whole queue on a background thread: the call is
+     * fire-and-forget, so the queue is not necessarily persisted when it returns. The synchronous
+     * reads of this repository wait for it, the Room LiveData of the queue does not.
+     */
     public void insert(Child media, boolean reset, int afterIndex) {
-        try {
-            List<Queue> mediaList = new ArrayList<>();
+        if (media == null) return;
 
-            if (!reset) {
-                GetMediaThreadSafe getMediaThreadSafe = new GetMediaThreadSafe(queueDao);
-                Thread getMediaThread = new Thread(getMediaThreadSafe);
-                getMediaThread.start();
-                getMediaThread.join();
-
-                mediaList = getMediaThreadSafe.getMedia();
-            }
-
-            int safeIndex = Math.min(Math.max(afterIndex, 0), mediaList.size());
-
-            if (safeIndex != afterIndex) {
-                Log.w(TAG, "queue desync: clamping afterIndex " + afterIndex + " to " + safeIndex);
-            }
-
-            Queue queueItem = new Queue(media);
-            mediaList.add(safeIndex, queueItem);
-
-            for (int i = 0; i < mediaList.size(); i++) {
-                mediaList.get(i).setTrackOrder(i);
-            }
-
-            Thread delete = new Thread(new DeleteAllThreadSafe(queueDao));
-            delete.start();
-            delete.join();
-
-            Thread insertAll = new Thread(new InsertAllThreadSafe(queueDao, mediaList));
-            insertAll.start();
-            insertAll.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        QUEUE_EXECUTOR.execute(() -> insertInternal(media, reset, afterIndex));
     }
 
+    /**
+     * Inserts a list of items and reorders the whole queue on a background thread: same
+     * fire-and-forget contract as {@link #insert(Child, boolean, int)}.
+     */
     public void insertAll(List<Child> toAdd, boolean reset, int afterIndex) {
-        try {
-            List<Queue> media = new ArrayList<>();
+        if (toAdd == null) return;
 
-            if (!reset) {
-                GetMediaThreadSafe getMediaThreadSafe = new GetMediaThreadSafe(queueDao);
-                Thread getMediaThread = new Thread(getMediaThreadSafe);
-                getMediaThread.start();
-                getMediaThread.join();
-
-                media = getMediaThreadSafe.getMedia();
-            }
-
-            int safeIndex = Math.min(Math.max(afterIndex, 0), media.size());
-
-            if (safeIndex != afterIndex) {
-                Log.w(TAG, "queue desync: clamping afterIndex " + afterIndex + " to " + safeIndex);
-            }
-
-            for (int i = 0; i < toAdd.size(); i++) {
-                Queue queueItem = new Queue(toAdd.get(i));
-                media.add(safeIndex + i, queueItem);
-            }
-
-            for (int i = 0; i < media.size(); i++) {
-                media.get(i).setTrackOrder(i);
-            }
-
-            Thread delete = new Thread(new DeleteAllThreadSafe(queueDao));
-            delete.start();
-            delete.join();
-
-            Thread insertAll = new Thread(new InsertAllThreadSafe(queueDao, media));
-            insertAll.start();
-            insertAll.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        QUEUE_EXECUTOR.execute(() -> insertAllInternal(toAdd, reset, afterIndex));
     }
 
     public void delete(int position) {
-        DeleteThreadSafe delete = new DeleteThreadSafe(queueDao, position);
-        Thread thread = new Thread(delete);
-        thread.start();
+        QUEUE_EXECUTOR.execute(() -> queueDao.delete(position));
     }
 
     public void deleteAll() {
-        DeleteAllThreadSafe deleteAll = new DeleteAllThreadSafe(queueDao);
-        Thread thread = new Thread(deleteAll);
-        thread.start();
+        QUEUE_EXECUTOR.execute(queueDao::deleteAll);
     }
 
     public int count() {
-        int count = 0;
-
-        CountThreadSafe countThread = new CountThreadSafe(queueDao);
-        Thread thread = new Thread(countThread);
-        thread.start();
-
-        try {
-            thread.join();
-            count = countThread.getCount();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        return count;
+        Integer count = awaitOnQueueThread(queueDao::count);
+        return count != null ? count : 0;
     }
 
     public void setLastPlayedTimestamp(String id) {
-        SetLastPlayedTimestampThreadSafe timestamp = new SetLastPlayedTimestampThreadSafe(queueDao, id);
-        Thread thread = new Thread(timestamp);
-        thread.start();
+        if (id == null) return;
+
+        QUEUE_EXECUTOR.execute(() -> queueDao.setLastPlay(id, System.currentTimeMillis()));
     }
 
     public void setPlayingPausedTimestamp(String id, long ms) {
-        SetPlayingPausedTimestampThreadSafe timestamp = new SetPlayingPausedTimestampThreadSafe(queueDao, id, ms);
-        Thread thread = new Thread(timestamp);
-        thread.start();
+        if (id == null) return;
+
+        QUEUE_EXECUTOR.execute(() -> queueDao.setPlayingChanged(id, ms));
     }
 
     public int getLastPlayedMediaIndex() {
-        int index = 0;
+        Queue lastMediaPlayed = awaitOnQueueThread(queueDao::getLastPlayed);
 
-        GetLastPlayedMediaThreadSafe getLastPlayedMediaThreadSafe = new GetLastPlayedMediaThreadSafe(queueDao);
-        Thread thread = new Thread(getLastPlayedMediaThreadSafe);
-        thread.start();
-
-        try {
-            thread.join();
-            Queue lastMediaPlayed = getLastPlayedMediaThreadSafe.getQueueItem();
-
-            if (lastMediaPlayed == null) {
-                return 0;
-            }
-
-            index = lastMediaPlayed.getTrackOrder();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if (lastMediaPlayed == null) {
+            return 0;
         }
 
-        return index;
+        return lastMediaPlayed.getTrackOrder();
     }
 
     public long getLastPlayedMediaTimestamp() {
-        long timestamp = 0;
+        Queue lastMediaPlayed = awaitOnQueueThread(queueDao::getLastPlayed);
 
-        GetLastPlayedMediaThreadSafe getLastPlayedMediaThreadSafe = new GetLastPlayedMediaThreadSafe(queueDao);
-        Thread thread = new Thread(getLastPlayedMediaThreadSafe);
-        thread.start();
+        if (lastMediaPlayed == null) {
+            return 0;
+        }
 
+        return lastMediaPlayed.getPlayingChanged();
+    }
+
+    private void insertInternal(Child media, boolean reset, int afterIndex) {
+        List<Queue> mediaList = reset ? new ArrayList<>() : getMediaForUpdate();
+
+        int safeIndex = Math.min(Math.max(afterIndex, 0), mediaList.size());
+
+        if (safeIndex != afterIndex) {
+            Log.w(TAG, "queue desync: clamping afterIndex " + afterIndex + " to " + safeIndex);
+        }
+
+        mediaList.add(safeIndex, new Queue(media));
+
+        writeQueue(mediaList);
+    }
+
+    private void insertAllInternal(List<Child> toAdd, boolean reset, int afterIndex) {
+        List<Queue> media = reset ? new ArrayList<>() : getMediaForUpdate();
+
+        int safeIndex = Math.min(Math.max(afterIndex, 0), media.size());
+
+        if (safeIndex != afterIndex) {
+            Log.w(TAG, "queue desync: clamping afterIndex " + afterIndex + " to " + safeIndex);
+        }
+
+        for (int i = 0; i < toAdd.size(); i++) {
+            media.add(safeIndex + i, new Queue(toAdd.get(i)));
+        }
+
+        writeQueue(media);
+    }
+
+    private List<Queue> getMediaForUpdate() {
+        List<Queue> media = queueDao.getAllSimple();
+        return media != null ? new ArrayList<>(media) : new ArrayList<>();
+    }
+
+    private void writeQueue(List<Queue> media) {
+        for (int i = 0; i < media.size(); i++) {
+            media.get(i).setTrackOrder(i);
+        }
+
+        queueDao.deleteAll();
+        queueDao.insertAll(media);
+    }
+
+    private static <T> T awaitOnQueueThread(Callable<T> task) {
         try {
-            thread.join();
-            Queue lastMediaPlayed = getLastPlayedMediaThreadSafe.getQueueItem();
-
-            if (lastMediaPlayed == null) {
-                return 0;
-            }
-
-            timestamp = lastMediaPlayed.getPlayingChanged();
+            return QUEUE_EXECUTOR.submit(task).get();
         } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        return timestamp;
-    }
-
-    private static class GetMediaThreadSafe implements Runnable {
-        private final QueueDao queueDao;
-        private List<Queue> media;
-
-        public GetMediaThreadSafe(QueueDao queueDao) {
-            this.queueDao = queueDao;
-        }
-
-        @Override
-        public void run() {
-            media = queueDao.getAllSimple();
-        }
-
-        public List<Queue> getMedia() {
-            return media;
-        }
-    }
-
-    private static class InsertAllThreadSafe implements Runnable {
-        private final QueueDao queueDao;
-        private final List<Queue> media;
-
-        public InsertAllThreadSafe(QueueDao queueDao, List<Queue> media) {
-            this.queueDao = queueDao;
-            this.media = media;
-        }
-
-        @Override
-        public void run() {
-            queueDao.insertAll(media);
-        }
-    }
-
-    private static class DeleteThreadSafe implements Runnable {
-        private final QueueDao queueDao;
-        private final int position;
-
-        public DeleteThreadSafe(QueueDao queueDao, int position) {
-            this.queueDao = queueDao;
-            this.position = position;
-        }
-
-        @Override
-        public void run() {
-            queueDao.delete(position);
-        }
-    }
-
-    private static class DeleteAllThreadSafe implements Runnable {
-        private final QueueDao queueDao;
-
-        public DeleteAllThreadSafe(QueueDao queueDao) {
-            this.queueDao = queueDao;
-        }
-
-        @Override
-        public void run() {
-            queueDao.deleteAll();
-        }
-    }
-
-    private static class CountThreadSafe implements Runnable {
-        private final QueueDao queueDao;
-        private int count = 0;
-
-        public CountThreadSafe(QueueDao queueDao) {
-            this.queueDao = queueDao;
-        }
-
-        @Override
-        public void run() {
-            count = queueDao.count();
-        }
-
-        public int getCount() {
-            return count;
-        }
-    }
-
-    private static class SetLastPlayedTimestampThreadSafe implements Runnable {
-        private final QueueDao queueDao;
-        private final String mediaId;
-
-        public SetLastPlayedTimestampThreadSafe(QueueDao queueDao, String mediaId) {
-            this.queueDao = queueDao;
-            this.mediaId = mediaId;
-        }
-
-        @Override
-        public void run() {
-            queueDao.setLastPlay(mediaId, System.currentTimeMillis());
-        }
-    }
-
-    private static class SetPlayingPausedTimestampThreadSafe implements Runnable {
-        private final QueueDao queueDao;
-        private final String mediaId;
-        private final long ms;
-
-        public SetPlayingPausedTimestampThreadSafe(QueueDao queueDao, String mediaId, long ms) {
-            this.queueDao = queueDao;
-            this.mediaId = mediaId;
-            this.ms = ms;
-        }
-
-        @Override
-        public void run() {
-            queueDao.setPlayingChanged(mediaId, ms);
-        }
-    }
-
-    private static class GetLastPlayedMediaThreadSafe implements Runnable {
-        private final QueueDao queueDao;
-        private Queue lastMediaPlayed;
-
-        public GetLastPlayedMediaThreadSafe(QueueDao queueDao) {
-            this.queueDao = queueDao;
-        }
-
-        @Override
-        public void run() {
-            lastMediaPlayed = queueDao.getLastPlayed();
-        }
-
-        public Queue getQueueItem() {
-            return lastMediaPlayed;
+            Thread.currentThread().interrupt();
+            Log.e(TAG, "Interrupted while reading the queue", e);
+            return null;
+        } catch (ExecutionException e) {
+            Log.e(TAG, "Unable to read the queue", e.getCause() != null ? e.getCause() : e);
+            return null;
         }
     }
 }

@@ -21,4 +21,8 @@ public class DirectoryViewModel extends AndroidViewModel {
     public LiveData<Directory> loadMusicDirectory(String id) {
         return directoryRepository.getMusicDirectory(id);
     }
+
+    public DirectoryRepository.SongsRequest getSongsIncludingSubfolders(Directory directory, int maxDepth, DirectoryRepository.SongsCallback callback) {
+        return directoryRepository.getSongsIncludingSubfolders(directory, maxDepth, callback);
+    }
 }

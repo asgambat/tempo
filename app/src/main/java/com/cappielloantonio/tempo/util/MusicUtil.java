@@ -6,7 +6,6 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.text.Html;
-import android.util.Log;
 
 import com.cappielloantonio.tempo.App;
 import com.cappielloantonio.tempo.R;
@@ -23,8 +22,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class MusicUtil {
-    private static final String TAG = "MusicUtil";
-
     public static Uri getStreamUri(String id) {
         Map<String, String> params = App.getSubsonicClientInstance(false).getParams();
 
@@ -54,8 +51,6 @@ public class MusicUtil {
             uri.append("&estimateContentLength=true");
 
         uri.append("&id=").append(id);
-
-        Log.d(TAG, "getStreamUri: " + uri);
 
         return Uri.parse(uri.toString());
     }
@@ -89,8 +84,6 @@ public class MusicUtil {
             uri.append(download.getDownloadUri());
         }
 
-        Log.d(TAG, "getDownloadUri: " + uri);
-
         return Uri.parse(uri.toString());
     }
 
@@ -121,8 +114,6 @@ public class MusicUtil {
             uri.append("&format=").append(getTranscodingFormatPreferenceForDownload());
 
         uri.append("&id=").append(id);
-
-        Log.d(TAG, "getTranscodedDownloadUri: " + uri);
 
         return Uri.parse(uri.toString());
     }

@@ -405,6 +405,13 @@ public class MainActivity extends BaseActivity {
                     Preferences.setServerSwitchableTimer();
                     Preferences.switchInUseServerAddress();
                     App.refreshSubsonicClient();
+
+                    // Verify the address we just switched to only if the switch really left the
+                    // local address: when local and remote are the same, switching is a no-op and
+                    // re-pinging here would loop forever.
+                    if (!Preferences.isInUseServerAddressLocal()) {
+                        pingServer();
+                    }
                 } else {
                     Preferences.setOpenSubsonic(subsonicResponse.getOpenSubsonic() != null && subsonicResponse.getOpenSubsonic());
                 }

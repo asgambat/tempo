@@ -2,6 +2,7 @@ package com.cappielloantonio.tempo.repository;
 
 
 import android.net.Uri;
+import android.util.Log;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -52,6 +53,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class AutomotiveRepository {
+    private static final String TAG = "AutomotiveRepository";
+
     private final SessionMediaItemDao sessionMediaItemDao = AppDatabase.getInstance().sessionMediaItemDao();
     private final ChronologyDao chronologyDao = AppDatabase.getInstance().chronologyDao();
 
@@ -248,7 +251,7 @@ public class AutomotiveRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
 

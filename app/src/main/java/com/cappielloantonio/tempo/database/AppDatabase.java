@@ -40,7 +40,10 @@ public abstract class AppDatabase extends RoomDatabase {
     public static synchronized AppDatabase getInstance() {
         if (instance == null) {
             instance = Room.databaseBuilder(App.getContext(), AppDatabase.class, DB_NAME)
-                    .fallbackToDestructiveMigration()
+                    // Only the schemas without a declared migration are dropped on upgrade.
+                    // Bumping the version without an @AutoMigration must never delete user data
+                    // (queue, servers, downloads, favorites) silently: the app has to crash instead.
+                    .fallbackToDestructiveMigrationFrom(1, 2, 3, 4, 5, 6, 7, 8)
                     .build();
         }
 

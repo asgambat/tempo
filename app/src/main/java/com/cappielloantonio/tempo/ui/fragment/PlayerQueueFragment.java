@@ -123,12 +123,17 @@ public class PlayerQueueFragment extends Fragment implements ClickCallback {
 
             @Override
             public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                int from = viewHolder.getBindingAdapterPosition();
+                int to = target.getBindingAdapterPosition();
+
+                if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) return false;
+
                 if (originalPosition == -1) {
-                    originalPosition = viewHolder.getBindingAdapterPosition();
+                    originalPosition = from;
                 }
 
-                fromPosition = viewHolder.getBindingAdapterPosition();
-                toPosition = target.getBindingAdapterPosition();
+                fromPosition = from;
+                toPosition = to;
 
                 /*
                  * Per spostare un elemento nella coda devo:
@@ -151,7 +156,8 @@ public class PlayerQueueFragment extends Fragment implements ClickCallback {
             public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
                 super.clearView(recyclerView, viewHolder);
 
-                if (originalPosition != -1 && fromPosition != -1 && toPosition != -1) {
+                if (originalPosition != RecyclerView.NO_POSITION && fromPosition != RecyclerView.NO_POSITION
+                        && toPosition != RecyclerView.NO_POSITION && toPosition < playerSongQueueAdapter.getItemCount()) {
                     MediaManager.swap(mediaBrowserListenableFuture, playerSongQueueAdapter.getItems(), originalPosition, toPosition);
                 }
 
@@ -162,8 +168,12 @@ public class PlayerQueueFragment extends Fragment implements ClickCallback {
 
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-                MediaManager.remove(mediaBrowserListenableFuture, playerSongQueueAdapter.getItems(), viewHolder.getBindingAdapterPosition());
-                viewHolder.getBindingAdapter().notifyDataSetChanged();
+                int position = viewHolder.getBindingAdapterPosition();
+
+                if (position == RecyclerView.NO_POSITION) return;
+
+                MediaManager.remove(mediaBrowserListenableFuture, playerSongQueueAdapter.getItems(), position);
+                playerSongQueueAdapter.notifyDataSetChanged();
             }
         }).attachToRecyclerView(bind.playerQueueRecyclerView);
     }

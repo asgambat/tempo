@@ -1,6 +1,7 @@
 package com.cappielloantonio.tempo.viewmodel;
 
 import android.app.Application;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -19,6 +20,8 @@ import retrofit2.Call;
 import retrofit2.Callback;
 
 public class ArtistCatalogueViewModel extends AndroidViewModel {
+    private static final String TAG = "ArtistCatalogueViewModel";
+
     private final MutableLiveData<List<ArtistID3>> artistList = new MutableLiveData<>(new ArrayList<>());
 
     public ArtistCatalogueViewModel(@NonNull Application application) {
@@ -51,7 +54,7 @@ public class ArtistCatalogueViewModel extends AndroidViewModel {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
     }

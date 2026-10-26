@@ -3,7 +3,6 @@ package com.cappielloantonio.tempo.glide;
 import android.content.Context;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
@@ -26,8 +25,6 @@ import com.google.android.material.elevation.SurfaceColors;
 import java.util.Map;
 
 public class CustomGlideRequest {
-    private static final String TAG = "CustomGlideRequest";
-
     public static final int CORNER_RADIUS = Preferences.isCornerRoundingEnabled() ? Preferences.getRoundedCornerSize() : 1;
 
     public static final DiskCacheStrategy DEFAULT_DISK_CACHE_STRATEGY = DiskCacheStrategy.ALL;
@@ -103,8 +100,6 @@ public class CustomGlideRequest {
             uri.append("&size=").append(size);
 
         uri.append("&id=").append(item);
-
-        Log.d(TAG, "createUrl() " + uri);
 
         return uri.toString();
     }

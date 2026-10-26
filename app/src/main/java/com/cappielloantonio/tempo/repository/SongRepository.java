@@ -152,7 +152,7 @@ public class SongRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
     }
@@ -201,7 +201,7 @@ public class SongRepository {
 
                         @Override
                         public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                            Log.e(TAG, "Request failed", t);
                         }
                     });
 
@@ -247,7 +247,7 @@ public class SongRepository {
 
                     @Override
                     public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
-
+                        Log.e(TAG, "Request failed", t);
                     }
                 });
 

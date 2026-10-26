@@ -18,6 +18,7 @@ import com.cappielloantonio.tempo.util.Constants;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @UnstableApi
 public class MusicDirectoryAdapter extends RecyclerView.Adapter<MusicDirectoryAdapter.ViewHolder> {
@@ -83,22 +84,33 @@ public class MusicDirectoryAdapter extends RecyclerView.Adapter<MusicDirectoryAd
         }
 
         public void onClick() {
-            Bundle bundle = new Bundle();
+            int position = getBindingAdapterPosition();
 
-            if (children.get(getBindingAdapterPosition()).isDir()) {
-                bundle.putString(Constants.MUSIC_DIRECTORY_ID, children.get(getBindingAdapterPosition()).getId());
+            if (position == RecyclerView.NO_POSITION) return;
+
+            Bundle bundle = new Bundle();
+            Child child = children.get(position);
+
+            if (child.isDir()) {
+                bundle.putString(Constants.MUSIC_DIRECTORY_ID, child.getId());
                 click.onMusicDirectoryClick(bundle);
             } else {
-                bundle.putParcelableArrayList(Constants.TRACKS_OBJECT, new ArrayList<>(children));
-                bundle.putInt(Constants.ITEM_POSITION, getBindingAdapterPosition());
+                List<Child> songs = children.stream().filter(item -> !item.isDir()).collect(Collectors.toList());
+
+                bundle.putParcelableArrayList(Constants.TRACKS_OBJECT, new ArrayList<>(songs));
+                bundle.putInt(Constants.ITEM_POSITION, songs.indexOf(child));
                 click.onMediaClick(bundle);
             }
         }
 
         private boolean onLongClick() {
-            if (!children.get(getBindingAdapterPosition()).isDir()) {
+            int position = getBindingAdapterPosition();
+
+            if (position == RecyclerView.NO_POSITION) return false;
+
+            if (!children.get(position).isDir()) {
                 Bundle bundle = new Bundle();
-                bundle.putParcelable(Constants.TRACK_OBJECT, children.get(getBindingAdapterPosition()));
+                bundle.putParcelable(Constants.TRACK_OBJECT, children.get(position));
 
                 click.onMediaLongClick(bundle);
 

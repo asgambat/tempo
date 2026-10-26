@@ -76,6 +76,10 @@ public class SongListPageFragment extends Fragment implements ClickCallback {
         initButtons();
         initSongListView();
 
+        // Requested once here: getSongList() is observed by both initButtons() and
+        // initSongListView(), so requesting inside it would duplicate the network call.
+        songListPageViewModel.requestSongList(getViewLifecycleOwner());
+
         return view;
     }
 
@@ -172,7 +176,7 @@ public class SongListPageFragment extends Fragment implements ClickCallback {
     }
 
     private void initButtons() {
-        songListPageViewModel.getSongList(getViewLifecycleOwner()).observe(getViewLifecycleOwner(), songs -> {
+        songListPageViewModel.getSongList().observe(getViewLifecycleOwner(), songs -> {
             if (bind != null && songs != null) {
                 setSongListPageSorter();
 
@@ -192,7 +196,7 @@ public class SongListPageFragment extends Fragment implements ClickCallback {
 
         songHorizontalAdapter = new SongHorizontalAdapter(this, true, false, null);
         bind.songListRecyclerView.setAdapter(songHorizontalAdapter);
-        songListPageViewModel.getSongList(getViewLifecycleOwner()).observe(getViewLifecycleOwner(), songs -> {
+        songListPageViewModel.getSongList().observe(getViewLifecycleOwner(), songs -> {
             isLoading = false;
             songHorizontalAdapter.setItems(songs);
             setSongListPageSubtitle(songs);

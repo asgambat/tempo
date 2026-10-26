@@ -242,7 +242,11 @@ public class MediaManager {
             mediaBrowserListenableFuture.addListener(() -> {
                 try {
                     if (mediaBrowserListenableFuture.isDone()) {
-                        mediaBrowserListenableFuture.get().moveMediaItem(from, to);
+                        MediaBrowser mediaBrowser = mediaBrowserListenableFuture.get();
+
+                        if (!isValidPosition(mediaBrowser, from) || !isValidPosition(mediaBrowser, to)) return;
+
+                        mediaBrowser.moveMediaItem(from, to);
                         swapDatabase(media);
                     }
                 } catch (ExecutionException | InterruptedException e) {
@@ -257,8 +261,12 @@ public class MediaManager {
             mediaBrowserListenableFuture.addListener(() -> {
                 try {
                     if (mediaBrowserListenableFuture.isDone()) {
-                        if (mediaBrowserListenableFuture.get().getMediaItemCount() > 1 && mediaBrowserListenableFuture.get().getCurrentMediaItemIndex() != toRemove) {
-                            mediaBrowserListenableFuture.get().removeMediaItem(toRemove);
+                        MediaBrowser mediaBrowser = mediaBrowserListenableFuture.get();
+
+                        if (!isValidPosition(mediaBrowser, toRemove)) return;
+
+                        if (mediaBrowser.getMediaItemCount() > 1 && mediaBrowser.getCurrentMediaItemIndex() != toRemove) {
+                            mediaBrowser.removeMediaItem(toRemove);
                             removeDatabase(media, toRemove);
                         } else {
                             removeDatabase(media, -1);
@@ -276,7 +284,11 @@ public class MediaManager {
             mediaBrowserListenableFuture.addListener(() -> {
                 try {
                     if (mediaBrowserListenableFuture.isDone()) {
-                        mediaBrowserListenableFuture.get().removeMediaItems(fromItem, toItem);
+                        MediaBrowser mediaBrowser = mediaBrowserListenableFuture.get();
+
+                        if (fromItem < 0 || fromItem >= toItem || toItem > mediaBrowser.getMediaItemCount()) return;
+
+                        mediaBrowser.removeMediaItems(fromItem, toItem);
                         removeRangeDatabase(media, fromItem, toItem);
                     }
                 } catch (ExecutionException | InterruptedException e) {
@@ -284,6 +296,10 @@ public class MediaManager {
                 }
             }, MoreExecutors.directExecutor());
         }
+    }
+
+    private static boolean isValidPosition(MediaBrowser mediaBrowser, int position) {
+        return position >= 0 && position < mediaBrowser.getMediaItemCount();
     }
 
     public static void getCurrentIndex(ListenableFuture<MediaBrowser> mediaBrowserListenableFuture, MediaIndexCallback callback) {
@@ -372,18 +388,21 @@ public class MediaManager {
     }
 
     private static void removeDatabase(List<Child> media, int toRemove) {
-        if (toRemove != -1) {
-            List<Child> remaining = new ArrayList<>(media);
-            remaining.remove(toRemove);
+        if (toRemove == -1 || media == null || toRemove >= media.size()) return;
 
-            getQueueRepository().insertAll(remaining, true, 0);
-        }
+        List<Child> remaining = new ArrayList<>(media);
+        remaining.remove(toRemove);
+
+        getQueueRepository().insertAll(remaining, true, 0);
     }
 
     private static void removeRangeDatabase(List<Child> media, int fromItem, int toItem) {
+        if (media == null) return;
+
+        int to = Math.min(toItem, media.size());
         List<Child> remaining = new ArrayList<>(media);
 
-        for (int i = toItem - 1; i >= fromItem; i--) {
+        for (int i = to - 1; i >= Math.max(fromItem, 0); i--) {
             remaining.remove(i);
         }
 

@@ -42,8 +42,26 @@
                     android:layout_marginBottom="8dp"
                     android:text="@string/label_placeholder"
                     app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toStartOf="@+id/directory_back_image_view"
+                    app:layout_constraintEnd_toStartOf="@+id/directory_subfolders_play_button"
                     app:layout_constraintStart_toStartOf="parent" />
+
+                <Button
+                    android:id="@+id/directory_subfolders_play_button"
+                    style="@style/Widget.Material3.Button.TonalButton.Icon"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:layout_marginEnd="8dp"
+                    android:contentDescription="@string/directory_page_play_with_subfolders_button"
+                    android:insetLeft="0dp"
+                    android:insetTop="0dp"
+                    android:insetRight="0dp"
+                    android:insetBottom="0dp"
+                    android:visibility="gone"
+                    app:cornerRadius="30dp"
+                    app:icon="@drawable/ic_play"
+                    app:layout_constraintBottom_toBottomOf="@id/directory_back_image_view"
+                    app:layout_constraintEnd_toStartOf="@id/directory_back_image_view"
+                    app:layout_constraintTop_toTopOf="@id/directory_back_image_view" />
 
                 <Button
                     android:id="@+id/directory_back_image_view"

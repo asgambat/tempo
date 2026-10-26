@@ -9,7 +9,7 @@ import com.cappielloantonio.tempo.model.Server;
 import java.util.List;
 
 public class ServerRepository {
-    private static final String TAG = "QueueRepository";
+    private static final String TAG = "ServerRepository";
 
     private final ServerDao serverDao = AppDatabase.getInstance().serverDao();
 
