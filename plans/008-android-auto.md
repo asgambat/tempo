@@ -91,8 +91,9 @@ l'observer resta attaccato, moltiplicandosi a ogni browsing.
 `onGetChildren` e `onGetSearchResult` non usano `page`/`pageSize`. Con `getDirectories`
 (migliaia di figli) la risposta è enorme e l'auto tronca o ritarda.
 **Fix:** slicing della pagina nel callback (`Futures.transform` su `MoreExecutors.directExecutor()`).
-Nota: i 60 risultati dichiarati da `onSearch` sono esatti per costruzione (`search3` con
-20+20+20), quindi il conteggio resta invariato.
+`onSearch` dichiara il numero **reale** di risultati: esegue la stessa `search3` (20+20+20) e passa
+`items.size` a `notifySearchResultChanged`; l'host ripete la query in `onGetSearchResult`, quindi una
+ricerca costa due richieste al server (pattern documentato da Media3). Il tetto per categoria resta 20.
 
 ### F0.8 — Percorso "cartelle" rotto a livello artista
 `getIndexes` restituisce gli artisti con `mediaId = INDEX_ID + artistId`; per quell'id
@@ -249,6 +250,16 @@ per AAOS un emulatore con immagine Automotive. Checklist:
 - [x] `AGENTS.MD`, `docs/ARCHITECTURE.md`, `README.md`, `plans/README.md` allineati.
 
 ## 7. Diario
+
+**2026-11-09 — Conteggio reale dei risultati di ricerca + allineamento `notquitemy`.**
+- `MediaLibraryServiceCallback.onSearch` non annuncia più 60 fisso: esegue la ricerca e passa
+  `items.size` a `notifySearchResultChanged`; se la ricerca fallisce annuncia 0 e propaga il codice
+  d'errore, così l'host non resta in caricamento quando i risultati sono meno di 60.
+- `onGetSearchResult` resta invariato (stessa query, paginata): due richieste per ricerca, come nel
+  pattern Media3. Il tetto 20+20+20 non cambia.
+- `notquitemy/MediaService.kt`: aggiunto `onTaskRemoved` come in `tempo`/`play` (ferma il servizio se
+  non sta suonando), allineando i tre flavor.
+- Verifica: compilazione dei 3 flavor, `task docs:check`.
 
 **2026-11-09 — Fix review P1/P2 (sessione auto).**
 - `MediaBrowserTree.getItems` restituisce un item per ogni item richiesto, nello stesso ordine:

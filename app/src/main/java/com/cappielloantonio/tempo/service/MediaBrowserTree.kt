@@ -425,9 +425,7 @@ object MediaBrowserTree {
                 }
 
                 if (id.startsWith(FOLDER_ID)) {
-                    return automotiveRepository.getIndexes(
-                        INDEX_ID,
-                        DIRECTORY_ID,
+                    return browseFolder(
                         id.removePrefix(
                             FOLDER_ID
                         )
@@ -435,8 +433,7 @@ object MediaBrowserTree {
                 }
 
                 if (id.startsWith(INDEX_ID)) {
-                    return automotiveRepository.getArtistAlbum(
-                        ALBUM_ID,
+                    return browseIndexEntry(
                         id.removePrefix(
                             INDEX_ID
                         )
@@ -481,6 +478,47 @@ object MediaBrowserTree {
             }
         }
     }
+
+    // Il percorso delle cartelle cambia con il server: alcuni espongono un indice ID3
+    // (getIndexes, poi getArtist), altri solo directory (getMusicDirectory). Se la prima strada
+    // restituisce una lista vuota o un errore si prova la seconda, così una cartella non mostra
+    // "nessun elemento" quando i dati ci sono. Sul telefono la stessa voce dell'indice apre una
+    // directory (IndexFragment -> DirectoryFragment).
+    private fun browseFolder(
+        id: String
+    ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> =
+        Futures.transformAsync(
+            automotiveRepository.getIndexes(INDEX_ID, DIRECTORY_ID, id),
+            { result ->
+                val items = result.value
+
+                if (result.resultCode == LibraryResult.RESULT_SUCCESS && !items.isNullOrEmpty()) {
+                    Futures.immediateFuture(result)
+                } else {
+                    Log.d(TAG, "No artists index for music folder $id, reading it as a directory")
+                    automotiveRepository.getDirectories(DIRECTORY_ID, id)
+                }
+            },
+            MoreExecutors.directExecutor()
+        )
+
+    private fun browseIndexEntry(
+        id: String
+    ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> =
+        Futures.transformAsync(
+            automotiveRepository.getArtistAlbum(ALBUM_ID, id),
+            { result ->
+                val items = result.value
+
+                if (result.resultCode == LibraryResult.RESULT_SUCCESS && !items.isNullOrEmpty()) {
+                    Futures.immediateFuture(result)
+                } else {
+                    Log.d(TAG, "No albums for index entry $id, reading it as a directory")
+                    automotiveRepository.getDirectories(DIRECTORY_ID, id)
+                }
+            },
+            MoreExecutors.directExecutor()
+        )
 
     // https://github.com/androidx/media/issues/156
     // onAddMediaItems deve restituire un item per ogni item richiesto, nello stesso ordine:

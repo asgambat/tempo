@@ -190,8 +190,33 @@ open class MediaLibraryServiceCallback(
         query: String,
         params: MediaLibraryService.LibraryParams?
     ): ListenableFuture<LibraryResult<Void>> {
-        session.notifySearchResultChanged(browser, query, 60, params)
-        return Futures.immediateFuture(LibraryResult.ofVoid())
+        // notifySearchResultChanged vuole il numero di risultati, che Media3 non conosce: la query
+        // va eseguita qui. L'host la ripete poi in onGetSearchResult per la pagina (pattern Media3:
+        // due richieste per ricerca). Prima si annunciavano 60 risultati fissi, anche quando la
+        // ricerca ne trovava meno.
+        return Futures.transform(
+            MediaBrowserTree.search(query),
+            { result ->
+                val items = result.value
+
+                if (result.resultCode == LibraryResult.RESULT_SUCCESS && items != null) {
+                    session.notifySearchResultChanged(browser, query, items.size, params)
+                    LibraryResult.ofVoid()
+                } else {
+                    // Nessun risultato annunciato e errore propagato: l'host mostra un messaggio
+                    // invece di restare in caricamento.
+                    session.notifySearchResultChanged(browser, query, 0, params)
+                    LibraryResult.ofError(
+                        if (result.resultCode == LibraryResult.RESULT_SUCCESS) {
+                            LibraryResult.RESULT_ERROR_BAD_VALUE
+                        } else {
+                            result.resultCode
+                        }
+                    )
+                }
+            },
+            MoreExecutors.directExecutor()
+        )
     }
 
     override fun onGetSearchResult(
