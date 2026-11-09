@@ -6,6 +6,7 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.text.Html;
+import android.util.Log;
 
 import com.cappielloantonio.tempo.App;
 import com.cappielloantonio.tempo.R;
@@ -22,6 +23,99 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class MusicUtil {
+    private static final String TAG = "MusicUtil";
+
+    /**
+     * URL di getCoverArt. Senza credenziali restano solo i parametri non sensibili
+     * (v, c, size, id): è la forma esposta ai controller esterni come Android Auto.
+     * `CustomGlideRequest.createUrl` usa la stessa costruzione con le credenziali.
+     */
+    public static String getCoverArtUrl(String id, int size, boolean withCredentials) {
+        Map<String, String> params = App.getSubsonicClientInstance(false).getParams();
+
+        StringBuilder uri = new StringBuilder();
+
+        uri.append(App.getSubsonicClientInstance(false).getUrl());
+        uri.append("getCoverArt");
+
+        String separator = "?";
+
+        if (withCredentials) {
+            if (params.get("u") != null) {
+                uri.append(separator).append("u=").append(Util.encode(params.get("u")));
+                separator = "&";
+            }
+            if (params.get("p") != null) {
+                uri.append(separator).append("p=").append(params.get("p"));
+                separator = "&";
+            }
+            if (params.get("s") != null) {
+                uri.append(separator).append("s=").append(params.get("s"));
+                separator = "&";
+            }
+            if (params.get("t") != null) {
+                uri.append(separator).append("t=").append(params.get("t"));
+                separator = "&";
+            }
+        }
+
+        if (params.get("v") != null) {
+            uri.append(separator).append("v=").append(params.get("v"));
+            separator = "&";
+        }
+        if (params.get("c") != null) {
+            uri.append(separator).append("c=").append(params.get("c"));
+            separator = "&";
+        }
+        if (size != -1) {
+            uri.append(separator).append("size=").append(size);
+            separator = "&";
+        }
+
+        uri.append(separator).append("id=").append(id);
+
+        return uri.toString();
+    }
+
+    public static Uri getCoverArtUri(String id, int size) {
+        return Uri.parse(getCoverArtUrl(id, size, false));
+    }
+
+    /**
+     * Aggiunge le credenziali alla sola getCoverArt del server configurato: serve al BitmapLoader
+     * della sessione per caricare gli artworkUri "pubblici" esposti ad Android Auto.
+     */
+    public static Uri withCoverArtCredentials(Uri uri) {
+        if (uri == null) return null;
+
+        try {
+            if (!"getCoverArt".equals(uri.getLastPathSegment())) return uri;
+
+            String serverUrl = App.getSubsonicClientInstance(false).getUrl();
+
+            if (serverUrl == null || !uri.toString().startsWith(serverUrl)) return uri;
+
+            Map<String, String> params = App.getSubsonicClientInstance(false).getParams();
+            Uri.Builder builder = uri.buildUpon();
+
+            appendQueryParameterIfMissing(builder, uri, "u", params.get("u"));
+            appendQueryParameterIfMissing(builder, uri, "p", params.get("p"));
+            appendQueryParameterIfMissing(builder, uri, "s", params.get("s"));
+            appendQueryParameterIfMissing(builder, uri, "t", params.get("t"));
+
+            return builder.build();
+        } catch (Exception exception) {
+            Log.w(TAG, "Unable to authenticate the artwork URI", exception);
+            return uri;
+        }
+    }
+
+    private static void appendQueryParameterIfMissing(Uri.Builder builder, Uri uri, String key, String value) {
+        if (value == null || value.isEmpty() || uri.getQueryParameter(key) != null) return;
+
+        builder.appendQueryParameter(key, value);
+    }
+
     public static Uri getStreamUri(String id) {
         Map<String, String> params = App.getSubsonicClientInstance(false).getParams();
 

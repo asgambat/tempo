@@ -9,6 +9,69 @@
 - Gradle: usare il wrapper (`./gradlew`), versione **8.10.2**.
 - Connessione per dipendenze (Maven Central / Google). L'AAR FFmpeg è **locale**: `libs/lib-decoder-ffmpeg-release.aar` (già nel repo, referenziata con `implementation files(...)`).
 
+### 1.1 Host aarch64 (Raspberry Pi 4)
+
+Su host aarch64 (es. Raspberry Pi 4) l'AAPT2 usato da AGP è un binario **x86-64**: senza il loader
+multiarch ogni task `process*DebugResources` fallisce con
+`x86_64-binfmt-P: Could not open '/lib64/ld-linux-x86-64.so.2'`. L'errore sembra di codice, è
+d'ambiente: nessuna `compile*` parte. Procedura:
+
+```bash
+# prerequisito: il loader x86-64 multiarch deve esistere
+ls /usr/x86_64-linux-gnu/ld-linux-x86-64.so.2
+
+# 1. fermare il daemon: un daemon già avviato NON eredita le variabili del client
+QEMU_LD_PREFIX=/usr/x86_64-linux-gnu bash gradlew --stop
+
+# 2. compilare con il prefix (il nuovo daemon eredita la variabile)
+QEMU_LD_PREFIX=/usr/x86_64-linux-gnu bash gradlew --offline --console=plain \
+  :app:compileTempoDebugJavaWithJavac :app:compileNotquitemyDebugJavaWithJavac :app:compilePlayDebugJavaWithJavac
+```
+
+- In alcuni clone il wrapper non ha il bit di esecuzione: usare `bash gradlew` (`./gradlew`
+  risponde *Permesso negato*).
+- `--offline` evita attese di rete quando la cache Gradle è già popolata.
+- Tempi misurati su Pi 4: **3–5 minuti** per i tre flavor in build incrementale (ultime misure:
+  3m05s, 4m19s); la prima esecuzione può superare i 600 s. Se un comando va in timeout,
+  **rilanciarlo**: risorse, Kotlin e javac già prodotti restano in cache e la seconda passata completa.
+- Se serve solo una verifica veloce, compilare prima il solo flavor `tempo`, poi gli altri due.
+- Con il `Taskfile.yml` il prefix non serve a mano: `task compile` e `task verify` rilevano
+  aarch64 (`uname -m`) e impostano `QEMU_LD_PREFIX` da soli (path sovrascrivibile con
+  `task QEMU_LD_PREFIX=/path ...`); su host non-aarch64 la variabile non viene impostata. Le
+  chiamate dirette a `bash gradlew` richiedono invece il prefix come sopra.
+- Non aggirare il problema con symlink a `/lib64` o sostituzioni dell'SDK: il workaround resta
+  per-comando e non va committato.
+
+#### Memoria ridotta (host con 2–4 GB)
+
+Oltre ad AAPT2 sotto qemu, durante la build restano vivi il daemon Gradle (`org.gradle.jvmargs=-Xmx2048m`
+nel `gradle.properties` del progetto) e un daemon Kotlin separato; fra una build e l'altra i daemon
+tengono la RAM occupata. Per compilare con un tetto più basso:
+
+```bash
+# ferma i daemon: libera subito la RAM che trattengono
+QEMU_LD_PREFIX=/usr/x86_64-linux-gnu bash gradlew --stop
+
+QEMU_LD_PREFIX=/usr/x86_64-linux-gnu bash gradlew --offline --console=plain \
+  --max-workers=1 \
+  -Dorg.gradle.jvmargs="-Xmx1536m -XX:MaxMetaspaceSize=512m" \
+  -Pkotlin.daemon.jvmargs="-Xmx768m -XX:MaxMetaspaceSize=384m" \
+  :app:compileTempoDebugJavaWithJavac
+```
+
+- `--max-workers=1` (equivalente a `org.gradle.workers.max=1`) evita di eseguire in parallelo più
+  AAPT2 sotto qemu, javac e Kotlin: è il parametro con l'effetto maggiore su un host single-board.
+- I due `-Xmx` valgono solo per quell'esecuzione e non cambiano il default del repository (2048m),
+  pensato per CI e macchine più capienti. Se Gradle esce in `OutOfMemoryError`, portare il suo heap
+  a `-Xmx1792m`.
+- Alternativa senza daemon Kotlin: `-Dkotlin.compiler.execution.strategy=in-process`, che però
+  richiede almeno 2 GB di heap Gradle (non combinarlo con `-Xmx1536m`).
+- Dopo la verifica, `bash gradlew --stop` per rilasciare il daemon.
+- `task qemu:stop` ferma i daemon e libera subito la RAM che trattengono; `task compile` e
+  `task verify` esportano da soli il `QEMU_LD_PREFIX` su host aarch64 (`task QEMU_LD_PREFIX=/path ...`
+  per cambiare il path). I tetti di memoria restano invece per-comando: se `task compile` esce in
+  `OutOfMemoryError`, usare la chiamata diretta a `bash gradlew` qui sopra con le `-D`/`-P`.
+
 ## 2. Configurazione
 
 - Build files in **Groovy DSL**: `build.gradle` (root) e `app/build.gradle`. Non convertirli a `.kts`.
@@ -22,7 +85,21 @@
 | `notquitemy` | `com.cappielloantonio.notquitemy.tempo` | ❌ | Variante F-Droid senza Play Services |
 | `play` | `com.cappielloantonio.play.tempo` | ✅ (`media3-cast`) | Distribuzione Play Store |
 
-Source set per flavor: `app/src/<flavor>/java|res` — contengono `service/MediaService.kt`, `ui/fragment/ToolbarFragment.java`, `util/Flavors.java` (e per `tempo`/`play` anche `MediaBrowserTree.kt` + `MediaLibrarySessionCallback.kt`; per `notquitemy` anche `res/menu/main_page_menu.xml`).
+Source set per flavor: `app/src/<flavor>/java|res` — contengono `service/MediaService.kt`, `ui/fragment/ToolbarFragment.java`, `util/Flavors.java` (per `notquitemy` anche `res/menu/main_page_menu.xml`). `MediaBrowserTree.kt` e `MediaLibraryServiceCallback.kt` vivono in `main` e sono condivisi da tutti i flavor.
+
+### 2.1.1 Android Automotive OS (AAOS)
+
+I flavor `tempo` e `notquitemy` dichiarano AAOS nei rispettivi manifest di flavor
+(`app/src/<flavor>/AndroidManifest.xml`): meta-data `com.android.automotive` con
+`@xml/auto_app_desc` e `<uses-feature android:name="android.hardware.type.automotive"
+android:required="false"/>`. L'APK resta installabile su telefono; su AAOS si installa via sideload o
+F-Droid. `android:appCategory="audio"` è nel manifest `main` per tutti i flavor.
+
+Il flavor `play` **non** dichiara AAOS: su Google Play i media app sono ammessi solo nel track
+"Android Automotive OS only", dove `android:required` deve essere `true` o assente, non nel track
+mobile. Non esiste quindi un artefatto AAOS Play; l'eventuale distribuzione AAOS su Play
+richiederebbe un APK/track separato con `required="true"`. `com.google.android.gms.car.application`
+(Android Auto su telefono) resta nel manifest `main` per tutti i flavor. Nessun permesso aggiuntivo.
 
 ### 2.2 Build types
 

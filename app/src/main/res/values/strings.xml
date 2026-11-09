@@ -425,4 +425,21 @@
     <string name="undraw_page">unDraw</string>
     <string name="undraw_thanks">A special thanks goes to unDraw without whose illustrations we could not have made this application more beautiful.</string>
     <string name="undraw_url">https://undraw.co/</string>
+    <string name="auto_not_configured">Set up your server in the app to browse music here</string>
+    <string name="auto_home">Home</string>
+    <string name="auto_library">Library</string>
+    <string name="auto_downloads">Downloads</string>
+    <string name="auto_most_played">Most played</string>
+    <string name="auto_last_played">Last played</string>
+    <string name="auto_recently_added">Recently added</string>
+    <string name="auto_recent_songs">Recent songs</string>
+    <string name="auto_starred_tracks">Starred tracks</string>
+    <string name="auto_starred_albums">Starred albums</string>
+    <string name="auto_starred_artists">Starred artists</string>
+    <string name="auto_random">Random</string>
+    <string name="auto_folders">Folders</string>
+    <string name="auto_playlists">Playlists</string>
+    <string name="auto_podcasts">Podcasts</string>
+    <string name="auto_radio_stations">Radio stations</string>
+    <string name="auto_no_downloads">No downloaded tracks</string>
 </resources>

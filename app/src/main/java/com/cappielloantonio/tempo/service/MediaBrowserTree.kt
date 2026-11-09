@@ -1,16 +1,22 @@
 package com.cappielloantonio.tempo.service
 
 import android.net.Uri
-import androidx.lifecycle.LifecycleOwner
+import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaItem.SubtitleConfiguration
 import androidx.media3.common.MediaMetadata
 import androidx.media3.session.LibraryResult
+import androidx.media3.session.MediaSession
+import com.cappielloantonio.tempo.App
+import com.cappielloantonio.tempo.R
 import com.cappielloantonio.tempo.repository.AutomotiveRepository
+import com.cappielloantonio.tempo.util.Preferences
 import com.cappielloantonio.tempo.util.Preferences.getServerId
+import com.google.common.base.Function
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.MoreExecutors
 import com.google.common.util.concurrent.SettableFuture
 
 object MediaBrowserTree {
@@ -24,17 +30,21 @@ object MediaBrowserTree {
     // Root
     private const val ROOT_ID = "[rootID]"
 
+    // Shown when no server has been configured yet
+    private const val NOT_CONFIGURED_ID = "[notConfiguredID]"
+
+    private const val TAG = "MediaBrowserTree"
+
     // First level
     private const val HOME_ID = "[homeID]"
     private const val LIBRARY_ID = "[libraryID]"
-    private const val OTHER_ID = "[otherID]"
+    private const val DOWNLOADS_ID = "[downloadsID]"
 
     // Second level HOME_ID
     private const val MOST_PLAYED_ID = "[mostPlayedID]"
     private const val LAST_PLAYED_ID = "[lastPlayedID]"
     private const val RECENTLY_ADDED_ID = "[recentlyAddedID]"
     private const val RECENT_SONGS_ID = "[recentSongsID]"
-    private const val MADE_FOR_YOU_ID = "[madeForYouID]"
     private const val STARRED_TRACKS_ID = "[starredTracksID]"
     private const val STARRED_ALBUMS_ID = "[starredAlbumsID]"
     private const val STARRED_ARTISTS_ID = "[starredArtistsID]"
@@ -46,7 +56,7 @@ object MediaBrowserTree {
     private const val DIRECTORY_ID = "[directoryID]"
     private const val PLAYLIST_ID = "[playlistID]"
 
-    // Second level OTHER_ID
+    // Podcast e radio (dentro LIBRARY_ID)
     private const val PODCAST_ID = "[podcastID]"
     private const val RADIO_ID = "[radioID]"
 
@@ -115,7 +125,7 @@ object MediaBrowserTree {
         treeNodes[ROOT_ID] =
             MediaItemNode(
                 buildMediaItem(
-                    title = "Root Folder",
+                    title = App.getContext().getString(R.string.app_name),
                     mediaId = ROOT_ID,
                     isPlayable = false,
                     isBrowsable = true,
@@ -128,7 +138,7 @@ object MediaBrowserTree {
         treeNodes[HOME_ID] =
             MediaItemNode(
                 buildMediaItem(
-                    title = "Home",
+                    title = App.getContext().getString(R.string.auto_home),
                     mediaId = HOME_ID,
                     isPlayable = false,
                     isBrowsable = true,
@@ -139,7 +149,7 @@ object MediaBrowserTree {
         treeNodes[LIBRARY_ID] =
             MediaItemNode(
                 buildMediaItem(
-                    title = "Library",
+                    title = App.getContext().getString(R.string.auto_library),
                     mediaId = LIBRARY_ID,
                     isPlayable = false,
                     isBrowsable = true,
@@ -147,11 +157,11 @@ object MediaBrowserTree {
                 )
             )
 
-        treeNodes[OTHER_ID] =
+        treeNodes[DOWNLOADS_ID] =
             MediaItemNode(
                 buildMediaItem(
-                    title = "Other",
-                    mediaId = OTHER_ID,
+                    title = App.getContext().getString(R.string.auto_downloads),
+                    mediaId = DOWNLOADS_ID,
                     isPlayable = false,
                     isBrowsable = true,
                     mediaType = MediaMetadata.MEDIA_TYPE_FOLDER_MIXED
@@ -160,14 +170,14 @@ object MediaBrowserTree {
 
         treeNodes[ROOT_ID]!!.addChild(HOME_ID)
         treeNodes[ROOT_ID]!!.addChild(LIBRARY_ID)
-        treeNodes[ROOT_ID]!!.addChild(OTHER_ID)
+        treeNodes[ROOT_ID]!!.addChild(DOWNLOADS_ID)
 
         // Second level HOME_ID
 
         treeNodes[MOST_PLAYED_ID] =
             MediaItemNode(
                 buildMediaItem(
-                    title = "Most played",
+                    title = App.getContext().getString(R.string.auto_most_played),
                     mediaId = MOST_PLAYED_ID,
                     isPlayable = false,
                     isBrowsable = true,
@@ -178,7 +188,7 @@ object MediaBrowserTree {
         treeNodes[LAST_PLAYED_ID] =
             MediaItemNode(
                 buildMediaItem(
-                    title = "Last played",
+                    title = App.getContext().getString(R.string.auto_last_played),
                     mediaId = LAST_PLAYED_ID,
                     isPlayable = false,
                     isBrowsable = true,
@@ -189,7 +199,7 @@ object MediaBrowserTree {
         treeNodes[RECENTLY_ADDED_ID] =
             MediaItemNode(
                 buildMediaItem(
-                    title = "Recently added",
+                    title = App.getContext().getString(R.string.auto_recently_added),
                     mediaId = RECENTLY_ADDED_ID,
                     isPlayable = false,
                     isBrowsable = true,
@@ -200,7 +210,7 @@ object MediaBrowserTree {
         treeNodes[RECENT_SONGS_ID] =
                 MediaItemNode(
                         buildMediaItem(
-                                title = "Recent songs",
+                                title = App.getContext().getString(R.string.auto_recent_songs),
                                 mediaId = RECENT_SONGS_ID,
                                 isPlayable = false,
                                 isBrowsable = true,
@@ -208,21 +218,10 @@ object MediaBrowserTree {
                         )
                 )
 
-        treeNodes[MADE_FOR_YOU_ID] =
-            MediaItemNode(
-                buildMediaItem(
-                    title = "Made for you",
-                    mediaId = MADE_FOR_YOU_ID,
-                    isPlayable = false,
-                    isBrowsable = true,
-                    mediaType = MediaMetadata.MEDIA_TYPE_FOLDER_PLAYLISTS
-                )
-            )
-
         treeNodes[STARRED_TRACKS_ID] =
             MediaItemNode(
                 buildMediaItem(
-                    title = "Starred tracks",
+                    title = App.getContext().getString(R.string.auto_starred_tracks),
                     mediaId = STARRED_TRACKS_ID,
                     isPlayable = false,
                     isBrowsable = true,
@@ -233,7 +232,7 @@ object MediaBrowserTree {
         treeNodes[STARRED_ALBUMS_ID] =
             MediaItemNode(
                 buildMediaItem(
-                    title = "Starred albums",
+                    title = App.getContext().getString(R.string.auto_starred_albums),
                     mediaId = STARRED_ALBUMS_ID,
                     isPlayable = false,
                     isBrowsable = true,
@@ -244,7 +243,7 @@ object MediaBrowserTree {
         treeNodes[STARRED_ARTISTS_ID] =
             MediaItemNode(
                 buildMediaItem(
-                    title = "Starred artists",
+                    title = App.getContext().getString(R.string.auto_starred_artists),
                     mediaId = STARRED_ARTISTS_ID,
                     isPlayable = false,
                     isBrowsable = true,
@@ -255,7 +254,7 @@ object MediaBrowserTree {
         treeNodes[RANDOM_ID] =
                 MediaItemNode(
                         buildMediaItem(
-                                title = "Random",
+                                title = App.getContext().getString(R.string.auto_random),
                                 mediaId = RANDOM_ID,
                                 isPlayable = false,
                                 isBrowsable = true,
@@ -267,7 +266,6 @@ object MediaBrowserTree {
         treeNodes[HOME_ID]!!.addChild(LAST_PLAYED_ID)
         treeNodes[HOME_ID]!!.addChild(RECENTLY_ADDED_ID)
         treeNodes[HOME_ID]!!.addChild(RECENT_SONGS_ID)
-        treeNodes[HOME_ID]!!.addChild(MADE_FOR_YOU_ID)
         treeNodes[HOME_ID]!!.addChild(STARRED_TRACKS_ID)
         treeNodes[HOME_ID]!!.addChild(STARRED_ALBUMS_ID)
         treeNodes[HOME_ID]!!.addChild(STARRED_ARTISTS_ID)
@@ -278,7 +276,7 @@ object MediaBrowserTree {
         treeNodes[FOLDER_ID] =
             MediaItemNode(
                 buildMediaItem(
-                    title = "Folders",
+                    title = App.getContext().getString(R.string.auto_folders),
                     mediaId = FOLDER_ID,
                     isPlayable = false,
                     isBrowsable = true,
@@ -289,7 +287,7 @@ object MediaBrowserTree {
         treeNodes[PLAYLIST_ID] =
             MediaItemNode(
                 buildMediaItem(
-                    title = "Playlists",
+                    title = App.getContext().getString(R.string.auto_playlists),
                     mediaId = PLAYLIST_ID,
                     isPlayable = false,
                     isBrowsable = true,
@@ -300,12 +298,12 @@ object MediaBrowserTree {
         treeNodes[LIBRARY_ID]!!.addChild(FOLDER_ID)
         treeNodes[LIBRARY_ID]!!.addChild(PLAYLIST_ID)
 
-        // Second level OTHER_ID
+        // Podcast e radio (dentro LIBRARY_ID)
 
         treeNodes[PODCAST_ID] =
             MediaItemNode(
                 buildMediaItem(
-                    title = "Podcasts",
+                    title = App.getContext().getString(R.string.auto_podcasts),
                     mediaId = PODCAST_ID,
                     isPlayable = false,
                     isBrowsable = true,
@@ -316,7 +314,7 @@ object MediaBrowserTree {
         treeNodes[RADIO_ID] =
             MediaItemNode(
                 buildMediaItem(
-                    title = "Radio stations",
+                    title = App.getContext().getString(R.string.auto_radio_stations),
                     mediaId = RADIO_ID,
                     isPlayable = false,
                     isBrowsable = true,
@@ -324,28 +322,57 @@ object MediaBrowserTree {
                 )
             )
 
-        treeNodes[OTHER_ID]!!.addChild(PODCAST_ID)
-        treeNodes[OTHER_ID]!!.addChild(RADIO_ID)
+        treeNodes[LIBRARY_ID]!!.addChild(PODCAST_ID)
+        treeNodes[LIBRARY_ID]!!.addChild(RADIO_ID)
     }
+
+    private fun isConfigured(): Boolean =
+        !Preferences.getServerId().isNullOrEmpty() && !Preferences.getServer().isNullOrEmpty()
+
+    private fun notConfiguredItem(): MediaItem =
+        buildMediaItem(
+            title = App.getContext().getString(R.string.auto_not_configured),
+            mediaId = NOT_CONFIGURED_ID,
+            isPlayable = false,
+            isBrowsable = false,
+            mediaType = MediaMetadata.MEDIA_TYPE_MIXED
+        )
 
     fun getRootItem(): MediaItem {
         return treeNodes[ROOT_ID]!!.item
     }
 
+    fun getPlaybackResumption(): ListenableFuture<MediaSession.MediaItemsWithStartPosition> =
+        automotiveRepository.getPlaybackResumption()
+
     fun getChildren(
         id: String
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+        // I download sono locali: restano raggiungibili anche senza server configurato
+        if (id == DOWNLOADS_ID) {
+            return automotiveRepository.getDownloads()
+        }
+
+        if (!isConfigured()) {
+            if (id == ROOT_ID) {
+                return treeNodes[ROOT_ID]!!.getChildren()
+            }
+
+            Log.w(TAG, "No server configured, returning the setup hint item")
+            return Futures.immediateFuture(
+                LibraryResult.ofItemList(ImmutableList.of(notConfiguredItem()), null)
+            )
+        }
+
         return when (id) {
             ROOT_ID -> treeNodes[ROOT_ID]?.getChildren()!!
             HOME_ID -> treeNodes[HOME_ID]?.getChildren()!!
             LIBRARY_ID -> treeNodes[LIBRARY_ID]?.getChildren()!!
-            OTHER_ID -> treeNodes[OTHER_ID]?.getChildren()!!
 
             MOST_PLAYED_ID -> automotiveRepository.getAlbums(id, "frequent", 100)
             LAST_PLAYED_ID -> automotiveRepository.getAlbums(id, "recent", 100)
             RECENTLY_ADDED_ID -> automotiveRepository.getAlbums(id, "newest", 100)
             RECENT_SONGS_ID -> automotiveRepository.getRecentlyPlayedSongs(getServerId(),100)
-            MADE_FOR_YOU_ID -> automotiveRepository.getStarredArtists(id)
             STARRED_TRACKS_ID -> automotiveRepository.starredSongs
             STARRED_ALBUMS_ID -> automotiveRepository.getStarredAlbums(id)
             STARRED_ARTISTS_ID -> automotiveRepository.getStarredArtists(id)
@@ -380,15 +407,6 @@ object MediaBrowserTree {
                     )
                 }
 
-                if (id.startsWith(MADE_FOR_YOU_ID)) {
-                    return automotiveRepository.getMadeForYou(
-                        id.removePrefix(
-                            MADE_FOR_YOU_ID
-                        ),
-                        20
-                    )
-                }
-
                 if (id.startsWith(STARRED_ALBUMS_ID)) {
                     return automotiveRepository.getAlbumTracks(
                         id.removePrefix(
@@ -409,6 +427,7 @@ object MediaBrowserTree {
                 if (id.startsWith(FOLDER_ID)) {
                     return automotiveRepository.getIndexes(
                         INDEX_ID,
+                        DIRECTORY_ID,
                         id.removePrefix(
                             FOLDER_ID
                         )
@@ -416,8 +435,8 @@ object MediaBrowserTree {
                 }
 
                 if (id.startsWith(INDEX_ID)) {
-                    return automotiveRepository.getDirectories(
-                        DIRECTORY_ID,
+                    return automotiveRepository.getArtistAlbum(
+                        ALBUM_ID,
                         id.removePrefix(
                             INDEX_ID
                         )
@@ -464,30 +483,41 @@ object MediaBrowserTree {
     }
 
     // https://github.com/androidx/media/issues/156
-    fun getItems(mediaItems: List<MediaItem>): List<MediaItem> {
-        val updatedMediaItems = ArrayList<MediaItem>()
+    // onAddMediaItems deve restituire un item per ogni item richiesto, nello stesso ordine:
+    // niente deduplica per mediaId (un brano può comparire due volte in coda o in playlist) e
+    // niente coda residua della sessione (subList(index, size)), che duplicava i brani.
+    fun getItems(mediaItems: List<MediaItem>): ListenableFuture<List<MediaItem>> {
+        val ids = mediaItems.map { it.mediaId }.distinct()
 
-        mediaItems.forEach {
-            if (it.localConfiguration?.uri != null) {
-                updatedMediaItems.add(it)
-            } else {
-                val sessionMediaItem = automotiveRepository.getSessionMediaItem(it.mediaId)
+        val mapItems = Function<Map<String, MediaItem>, List<MediaItem>> { metadata ->
+            mediaItems.map { item ->
+                if (item.localConfiguration?.uri != null) {
+                    item
+                } else {
+                    val enrichedItem = metadata[item.mediaId]
 
-                if (sessionMediaItem != null) {
-                    var toAdd = automotiveRepository.getMetadatas(sessionMediaItem.timestamp!!)
-                    val index = toAdd.indexOfFirst { mediaItem -> mediaItem.mediaId == it.mediaId }
-
-                    toAdd = toAdd.subList(index, toAdd.size)
-
-                    updatedMediaItems.addAll(toAdd)
+                    if (enrichedItem == null) {
+                        Log.w(TAG, "No session metadata for ${item.mediaId}, keeping the original item")
+                        item
+                    } else {
+                        enrichedItem
+                    }
                 }
             }
         }
 
-        return updatedMediaItems
+        return Futures.transform(
+            automotiveRepository.getSessionMediaItems(ids),
+            mapItems,
+            MoreExecutors.directExecutor()
+        )
     }
 
     fun search(query: String): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+        if (!isConfigured()) {
+            return Futures.immediateFuture(LibraryResult.ofItemList(ImmutableList.of(), null))
+        }
+
         return automotiveRepository.search(
             query,
             ALBUM_ID,

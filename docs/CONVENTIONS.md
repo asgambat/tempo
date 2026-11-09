@@ -17,7 +17,7 @@ Il progetto è eterogeneo per storia (Java legacy + Kotlin recente). **La coeren
 | Retrofit `XService`/`XClient` | Java |
 | Modelli Subsonic (`subsonic/models/`) e locali (`model/`) | **Kotlin** (data class, Parcelable) |
 | `Constants.kt`, `Preferences.kt`, `RetrofitClient.kt` | Kotlin |
-| Servizi di flavor (`MediaService.kt`, `MediaBrowserTree.kt`, `MediaLibrarySessionCallback.kt`) | Kotlin |
+| Servizi di flavor (`MediaService.kt`) e albero auto condiviso (`MediaBrowserTree.kt`, `MediaLibraryServiceCallback.kt`) | Kotlin |
 | Utility recenti (`StreamingCacheDataSource.kt`, `DateConverters.kt`, `NestedScrollableHost.kt`) | Kotlin |
 
 - Nei `.java`: solo sintassi **Java 8** (`jvmTarget 1.8`); `stream()` ammesso (minSdk 24 con desugaring AGP).

@@ -12,8 +12,11 @@ import java.util.List;
 
 @Dao
 public interface SessionMediaItemDao {
-    @Query("SELECT * FROM session_media_item WHERE id = :id")
+    @Query("SELECT * FROM session_media_item WHERE id = :id ORDER BY timestamp DESC LIMIT 1")
     SessionMediaItem get(String id);
+
+    @Query("SELECT * FROM session_media_item WHERE id IN (:ids)")
+    List<SessionMediaItem> getByIds(List<String> ids);
 
     @Query("SELECT * FROM session_media_item WHERE timestamp = :timestamp")
     List<SessionMediaItem> get(long timestamp);
@@ -26,4 +29,7 @@ public interface SessionMediaItemDao {
 
     @Query("DELETE FROM session_media_item")
     void deleteAll();
+
+    @Query("DELETE FROM session_media_item WHERE timestamp < :threshold")
+    void deleteOlderThan(long threshold);
 }

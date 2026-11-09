@@ -100,11 +100,12 @@ class MediaService : MediaLibraryService(), SessionAvailabilityListener {
         mediaLibrarySession =
                 MediaLibrarySession.Builder(this, player, createLibrarySessionCallback())
                         .setSessionActivity(sessionActivityPendingIntent)
+                        .setBitmapLoader(DownloadUtil.buildArtworkBitmapLoader())
                         .build()
     }
 
     private fun createLibrarySessionCallback(): MediaLibrarySession.Callback {
-        return MediaLibrarySessionCallback(this, automotiveRepository)
+        return MediaLibraryServiceCallback(this, automotiveRepository)
     }
 
     private fun initializePlayerListener() {
@@ -191,7 +192,7 @@ class MediaService : MediaLibraryService(), SessionAvailabilityListener {
         if (this::castPlayer.isInitialized) castPlayer.release()
         player.release()
         mediaLibrarySession.release()
-        automotiveRepository.deleteMetadata()
+        automotiveRepository.pruneMetadata()
         clearListener()
     }
 

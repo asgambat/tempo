@@ -47,10 +47,19 @@
 - ⚠️ **Ambiente di sviluppo a risorse limitate (Raspberry Pi 4)**: non lanciare build complete, assemblaggio APK o Gradle in generale se non strettamente necessario; preferisci `task --dry <task>` per ispezionare i comandi e le verifiche più leggere possibili. I comandi pesanti (`build`, `build:all`, `build:release`, `verify`) sono per la macchina dell'utente o per la CI.
 - Se tocchi `service/`, `ui/fragment/ToolbarFragment.java` o `util/Flavors.java`, compila **tutti e tre** i flavor (v. §6).
 
+### Host aarch64 (Raspberry Pi 4)
+
+L'AAPT2 di AGP è un binario x86-64: su host aarch64 ogni `process*DebugResources` fallisce senza
+`QEMU_LD_PREFIX=/usr/x86_64-linux-gnu`, e il daemon va fermato prima perché non eredita le variabili
+del client. `task compile` / `task verify` rilevano aarch64 da soli e impostano la variabile;
+per le chiamate dirette a Gradle la procedura manuale, i tempi misurati, i limiti e i parametri a
+memoria ridotta (RAM/zram) sono in [`docs/BUILD.md`](docs/BUILD.md) §1.1.
+
 ### Taskfile (go-task)
 
 `Taskfile.yml` nella root incapsula i comandi del ciclo di vita (`task --list` per l'elenco). Punti d'ingresso per gli agenti:
 - `task verify` — verifica minima (compilazione dei 3 flavor), equivalente alla regola sopra;
+- `task compile` / `task verify` — impostano da soli `QEMU_LD_PREFIX` su host aarch64 (path sovrascrivibile con `task QEMU_LD_PREFIX=/path ...`) e usano `bash ./gradlew`; `task qemu:stop` ferma i daemon e libera la RAM che trattengono; v. `docs/BUILD.md` §1.1;
 - `task docs:check` — coerenza dei link tra i documenti;
 - `task agents:context` — riepilogo rapido del progetto (bootstrap);
 - `task flavors` — matrice dei flavor.
@@ -86,7 +95,7 @@ Mappa dei package sotto `app/src/main/java/com/cappielloantonio/tempo/`:
 | `github/` | check aggiornamenti: `Github.java`, `GithubRetrofitClient.kt`, `api/release/`, `models/`, `utils/UpdateUtil.java` | Java + Kotlin |
 | `database/` | `AppDatabase.java` (Room v10), `dao/` (8 DAO), `converter/DateConverters.kt` | Java |
 | `model/` | entità Room + modelli locali (Queue, Server, Download, Chronology, Favorite, RecentSearch, SessionMediaItem, HomeSector, ReplayGain) | Kotlin |
-| `service/` | `MediaManager.java` (facade playback), `DownloaderManager.java`, `DownloaderService.java`; `MediaService` è **per flavor** | Java + Kotlin |
+| `service/` | `MediaManager.java` (facade playback), `DownloaderManager.java`, `DownloaderService.java`, `MediaBrowserTree.kt` + `MediaLibraryServiceCallback.kt` (condivisi in `main`); `MediaService` è **per flavor** | Java + Kotlin |
 | `util/` | `Constants.kt`, `Preferences.kt`, `MusicUtil`, `DownloadUtil`, `MappingUtil`, `NetworkUtil`, `UIUtil`, `IndexUtil`, `ReplayGainUtil`, `StreamingCacheDataSource.kt`, `OpenSubsonicExtensionsUtil` | Java + Kotlin |
 | `interfaces/` | callback di click/diaolog usate da fragment e adapter (`ClickCallback`, `DialogClickCallback`, …) | Java |
 | `helper/` | `ThemeHelper.java`, helper RecyclerView (`helper/recyclerview/`) | Java + Kotlin |
@@ -94,7 +103,7 @@ Mappa dei package sotto `app/src/main/java/com/cappielloantonio/tempo/`:
 
 ## 5. Convenzioni irrinunciabili
 
-1. **Java vs Kotlin**: il core legacy è Java (UI, ViewModel, repository, DAO, client REST). Il Kotlin recente vive in: modelli (`subsonic/models/`, `model/`), `util/Constants.kt`, `util/Preferences.kt`, `RetrofitClient.kt`, servizi di flavor (`MediaService.kt`, `MediaBrowserTree.kt`, `MediaLibrarySessionCallback.kt`). Quando modifichi un file, resta nel suo linguaggio; per file nuovi segui il dominio di pertinenza (modelli/utility nuove → Kotlin ammesso; UI/ViewModel/repo → Java).
+1. **Java vs Kotlin**: il core legacy è Java (UI, ViewModel, repository, DAO, client REST). Il Kotlin recente vive in: modelli (`subsonic/models/`, `model/`), `util/Constants.kt`, `util/Preferences.kt`, `RetrofitClient.kt`, servizi di flavor (`MediaService.kt`) e dell'albero auto condiviso (`MediaBrowserTree.kt`, `MediaLibraryServiceCallback.kt`). Quando modifichi un file, resta nel suo linguaggio; per file nuovi segui il dominio di pertinenza (modelli/utility nuove → Kotlin ammesso; UI/ViewModel/repo → Java).
 2. **ViewBinding**: nei fragment il binding si chiama sempre `bind`, viene azzerato in `onDestroyView()` (`bind = null`) e ogni callback asincrona lo null-checka (`if (bind != null)`). Non introdurre DataBinding né Compose.
 3. **Repository**: pattern canonico = creare `MutableLiveData`, chiamare `App.getSubsonicClientInstance(false).getXClient().metodo().enqueue(new Callback<ApiResponse>() {...})`, valorizzare in `onResponse` con i null-check a cascata. Metodi "fire and forget" (scrobble, rating, savePlayQueue) restituiscono `void`.
 4. **Room**: scritture bloccanti tramite `Thread` + `Runnable` interno + `thread.join()` (v. `QueueRepository`); letture reattive via `LiveData` dal DAO. Non eseguire mai query non-LiveData sul main thread.
@@ -113,11 +122,12 @@ Mappa dei package sotto `app/src/main/java/com/cappielloantonio/tempo/`:
 |---|---|---|---|
 | applicationId | `com.cappielloantonio.tempo` | `com.cappielloantonio.notquitemy.tempo` | `com.cappielloantonio.play.tempo` |
 | `service/MediaService.kt` | ✅ con CastPlayer | ✅ senza Cast | ✅ con CastPlayer |
-| `service/MediaBrowserTree.kt` + `MediaLibrarySessionCallback.kt` | ✅ | ❌ | ✅ |
+| `service/MediaBrowserTree.kt` + `MediaLibraryServiceCallback.kt` (in `main`) | ✅ | ✅ | ✅ |
 | `ui/fragment/ToolbarFragment.java` | ✅ | ✅ | ✅ |
 | `util/Flavors.java` | ✅ (init Cast) | ✅ (stub) | ✅ (init Cast) |
 | dipendenza `media3-cast` | ✅ | ❌ | ✅ |
 | risorse proprie | icone launcher, `ic_splash_logo`, `ic_toolbar_tempo` | icone launcher + `menu/main_page_menu.xml` | icone launcher |
+| `AndroidManifest.xml` di flavor (AAOS) | ✅ `com.android.automotive` + `uses-feature automotive required="false"` | ✅ idem | ❌ (fuori dal track AAOS Play: vincolo media app) |
 
 **Regola**: ogni modifica a `MediaService`, `ToolbarFragment`, `Flavors` o al menu va replicata/coordinata su tutti i flavor, mantenendo le differenze di tabella (il flavor `notquitemy` non ha Cast e non dipende da Google Play Services).
 

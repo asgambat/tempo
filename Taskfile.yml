@@ -10,6 +10,17 @@ version: '3'
 
 vars:
   FLAVOR: '{{.FLAVOR | default "Tempo"}}'
+  QEMU_LD_PREFIX: '{{.QEMU_LD_PREFIX | default "/usr/x86_64-linux-gnu"}}'
+  # aarch64 hosts (Raspberry Pi 4, ARM servers): AGP ships an x86-64 AAPT2, so the
+  # multiarch loader prefix must be present. Empty on every other host, so the
+  # commands that use it are unchanged there. Override the path with
+  # `task QEMU_LD_PREFIX=/path ...`. The prefix only takes effect on a daemon
+  # started with it — `task qemu:stop` first (daemons do not inherit client env).
+  GRADLE_QEMU:
+    sh: |
+      if [ "$(uname -m)" = "aarch64" ] && [ -d "{{.QEMU_LD_PREFIX}}" ]; then
+        echo "QEMU_LD_PREFIX={{.QEMU_LD_PREFIX}}"
+      fi
 
 set: [errexit]
 
@@ -42,9 +53,10 @@ tasks:
       - ./gradlew install{{.FLAVOR}}Debug
 
   compile:
-    desc: Fast Java compilation check for FLAVOR (minimum single-flavor check)
+    desc: Fast Java compilation check for FLAVOR (auto qemu prefix on aarch64)
     cmds:
-      - ./gradlew :app:compile{{.FLAVOR}}DebugJavaWithJavac
+      - >-
+        {{.GRADLE_QEMU}} bash ./gradlew :app:compile{{.FLAVOR}}DebugJavaWithJavac
 
   clean:
     desc: Remove build outputs
@@ -59,9 +71,19 @@ tasks:
   # ─── Verification (agent-friendly) ──────────────────────────────────────────
 
   verify:
-    desc: Compile Java of all three flavors (heavy — avoid on constrained hosts, use `compile` first)
+    desc: Compile Java of all three flavors (heavy — avoid on constrained hosts, use `compile` first; auto qemu prefix on aarch64)
     cmds:
-      - ./gradlew :app:compileTempoDebugJavaWithJavac :app:compileNotquitemyDebugJavaWithJavac :app:compilePlayDebugJavaWithJavac
+      - >-
+        {{.GRADLE_QEMU}} bash ./gradlew :app:compileTempoDebugJavaWithJavac
+        :app:compileNotquitemyDebugJavaWithJavac :app:compilePlayDebugJavaWithJavac
+
+  # ─── Host aarch64 (AAPT2 x86-64) ─────────────────────────────────────────────
+  # `compile`/`verify` detect aarch64 via `uname -m` and export QEMU_LD_PREFIX themselves.
+
+  qemu:stop:
+    desc: Stop Gradle daemons and free the RAM they hold (useful on low-memory hosts)
+    cmds:
+      - bash ./gradlew --stop
 
   docs:check:
     desc: Check that every local doc referenced by AGENTS.MD/README exists

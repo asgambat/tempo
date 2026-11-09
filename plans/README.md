@@ -14,6 +14,7 @@ Stato del repository al momento dell'audit: esiste già un diff di lavoro **non 
 | 005 | Logging senza credenziali (OkHttp level condizionato al debug) | — | DONE (2026-10-15, `compileTempoDebugJavaWithJavac` exit 0) |
 | 006 | Observer accumulation + retry-on-failure | NON prima di 003 (①toccano lo stesso flusso bottom-sheet) | DONE (2026-10-25: 6a `observeOnce`, retry lista e sweep `Log.e` sugli `onFailure` dei repository; compilazione `tempo` OK; `notquitemy`/`play` non verificate — build interrotte su richiesta per instabilità dell'host) |
 | 007 | "Riproduci con le sottocartelle" nella schermata cartella | — | DONE (2026-10-25, `compileTempoDebugJavaWithJavac` exit 0; `notquitemy`/`play` non verificate) |
+| 008 | Supporto Android Auto (+ dichiarazione AAOS): browsing, metadati, flavor, presentazione | 002 (stesso dominio playback) | DONE (2026-11-09) — F0.1–F0.9 + Fasi 1-6, 3 flavor compilati; verifica in auto (DHU/emulatore AAOS) ancora da fare. Decisioni chiuse: Auto+AAOS, 3 flavor condivisi, Home/Library/Downloads, ripresa+offline, cover senza token, AAOS solo su `tempo`/`notquitemy` |
 
 ## Regole trasversali per ogni executor
 

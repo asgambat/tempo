@@ -11,7 +11,6 @@ import androidx.media3.common.util.UnstableApi
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.cappielloantonio.tempo.glide.CustomGlideRequest
 import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.subsonic.models.InternetRadioStation
 import com.cappielloantonio.tempo.subsonic.models.PodcastEpisode
@@ -196,7 +195,8 @@ class SessionMediaItem() {
 
     fun getMediaItem(): MediaItem {
         val uri: Uri = getStreamUri()
-        val artworkUri = Uri.parse(CustomGlideRequest.createUrl(coverArtId, getImageSize()))
+        // Metadati usati solo per Android Auto: l'artwork URI non deve contenere credenziali
+        val artworkUri = MusicUtil.getCoverArtUri(coverArtId, getImageSize())
 
         val bundle = Bundle()
         bundle.putString("id", id)
@@ -230,7 +230,7 @@ class SessionMediaItem() {
         bundle.putLong("bookmarkPosition", bookmarkPosition ?: 0)
         bundle.putInt("originalWidth", originalWidth ?: 0)
         bundle.putInt("originalHeight", originalHeight ?: 0)
-        bundle.putString("uri", uri.toString())
+        // Nessun extras "uri": il bundle è esposto ad Android Auto e l'URI contiene credenziali
 
         return MediaItem.Builder()
             .setMediaId(id!!)

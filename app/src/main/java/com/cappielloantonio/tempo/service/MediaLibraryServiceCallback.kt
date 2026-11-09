@@ -14,10 +14,12 @@ import androidx.media3.session.SessionResult
 import com.cappielloantonio.tempo.R
 import com.cappielloantonio.tempo.repository.AutomotiveRepository
 import com.google.common.collect.ImmutableList
+import com.google.common.util.concurrent.AsyncFunction
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.MoreExecutors
 
-open class MediaLibrarySessionCallback(
+open class MediaLibraryServiceCallback(
     context: Context,
     automotiveRepository: AutomotiveRepository
 ) :
@@ -45,6 +47,8 @@ open class MediaLibrarySessionCallback(
             ).setIconResId(R.drawable.exo_icon_shuffle_on).build()
     )
 
+    private var notificationController: MediaSession.ControllerInfo? = null
+
     @OptIn(UnstableApi::class)
     val mediaNotificationSessionCommands =
         MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon()
@@ -62,6 +66,10 @@ open class MediaLibrarySessionCallback(
                 controller
             ) || session.isAutoCompanionController(controller)
         ) {
+            if (session.isMediaNotificationController(controller)) {
+                notificationController = controller
+            }
+
             val customLayout =
                 customLayoutCommandButtons[if (session.player.shuffleModeEnabled) 1 else 0]
 
@@ -74,6 +82,22 @@ open class MediaLibrarySessionCallback(
     }
 
     @OptIn(UnstableApi::class)
+    override fun onPostConnect(session: MediaSession, controller: MediaSession.ControllerInfo) {
+        if (controller.controllerVersion == 0) return
+
+        // Il comando shuffle è disponibile solo per questi controller (v. onConnect): impostare il
+        // layout anche sul MediaController del telefono spedirebbe un comando che non conosce.
+        if (!session.isMediaNotificationController(controller) &&
+            !session.isAutomotiveController(controller) &&
+            !session.isAutoCompanionController(controller)
+        ) return
+
+        val customLayout = customLayoutCommandButtons[if (session.player.shuffleModeEnabled) 1 else 0]
+
+        session.setCustomLayout(controller, ImmutableList.of(customLayout))
+    }
+
+    @OptIn(UnstableApi::class)
     override fun onCustomCommand(
         session: MediaSession,
         controller: MediaSession.ControllerInfo,
@@ -82,18 +106,22 @@ open class MediaLibrarySessionCallback(
     ): ListenableFuture<SessionResult> {
         if (CUSTOM_COMMAND_TOGGLE_SHUFFLE_MODE_ON == customCommand.customAction) {
             session.player.shuffleModeEnabled = true
-            session.setCustomLayout(
-                session.mediaNotificationControllerInfo!!,
-                ImmutableList.of(customLayoutCommandButtons[1])
-            )
+            notificationController?.let { controllerInfo ->
+                session.setCustomLayout(
+                    controllerInfo,
+                    ImmutableList.of(customLayoutCommandButtons[1])
+                )
+            }
 
             return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
         } else if (CUSTOM_COMMAND_TOGGLE_SHUFFLE_MODE_OFF == customCommand.customAction) {
             session.player.shuffleModeEnabled = false
-            session.setCustomLayout(
-                session.mediaNotificationControllerInfo!!,
-                ImmutableList.of(customLayoutCommandButtons[0])
-            )
+            notificationController?.let { controllerInfo ->
+                session.setCustomLayout(
+                    controllerInfo,
+                    ImmutableList.of(customLayoutCommandButtons[0])
+                )
+            }
 
             return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
         }
@@ -117,7 +145,18 @@ open class MediaLibrarySessionCallback(
         pageSize: Int,
         params: MediaLibraryService.LibraryParams?
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-        return MediaBrowserTree.getChildren(parentId)
+        return Futures.transform(
+            MediaBrowserTree.getChildren(parentId),
+            { result -> pageOf(result, page, pageSize) },
+            MoreExecutors.directExecutor()
+        )
+    }
+
+    override fun onPlaybackResumption(
+        session: MediaSession,
+        controller: MediaSession.ControllerInfo
+    ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+        return MediaBrowserTree.getPlaybackResumption()
     }
 
     override fun onAddMediaItems(
@@ -125,11 +164,24 @@ open class MediaLibrarySessionCallback(
         controller: MediaSession.ControllerInfo,
         mediaItems: List<MediaItem>
     ): ListenableFuture<List<MediaItem>> {
-        return super.onAddMediaItems(
-            mediaSession,
-            controller,
-            MediaBrowserTree.getItems(mediaItems)
+        val resolve = object : AsyncFunction<List<MediaItem>, List<MediaItem>> {
+            override fun apply(items: List<MediaItem>): ListenableFuture<List<MediaItem>> =
+                addMediaItems(mediaSession, controller, items)
+        }
+
+        return Futures.transformAsync(
+            MediaBrowserTree.getItems(mediaItems),
+            resolve,
+            MoreExecutors.directExecutor()
         )
+    }
+
+    private fun addMediaItems(
+        mediaSession: MediaSession,
+        controller: MediaSession.ControllerInfo,
+        mediaItems: List<MediaItem>
+    ): ListenableFuture<List<MediaItem>> {
+        return super.onAddMediaItems(mediaSession, controller, mediaItems)
     }
 
     override fun onSearch(
@@ -150,13 +202,43 @@ open class MediaLibrarySessionCallback(
         pageSize: Int,
         params: MediaLibraryService.LibraryParams?
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-        return MediaBrowserTree.search(query)
+        return Futures.transform(
+            MediaBrowserTree.search(query),
+            { result -> pageOf(result, page, pageSize) },
+            MoreExecutors.directExecutor()
+        )
+    }
+
+    private fun pageOf(
+        result: LibraryResult<ImmutableList<MediaItem>>,
+        page: Int,
+        pageSize: Int
+    ): LibraryResult<ImmutableList<MediaItem>> {
+        if (result.resultCode != LibraryResult.RESULT_SUCCESS) return result
+
+        val items = result.value
+            ?: return LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE)
+
+        if (pageSize <= 0) return result
+
+        // Long: con pageSize == Int.MAX_VALUE (default Media3) page * pageSize andrebbe in overflow
+        val from = page.coerceAtLeast(0).toLong() * pageSize
+        if (from >= items.size) {
+            return LibraryResult.ofItemList(ImmutableList.of(), result.params)
+        }
+
+        val to = minOf(from + pageSize, items.size.toLong())
+
+        return LibraryResult.ofItemList(
+            ImmutableList.copyOf(items.subList(from.toInt(), to.toInt())),
+            result.params
+        )
     }
 
     companion object {
         private const val CUSTOM_COMMAND_TOGGLE_SHUFFLE_MODE_ON =
-            "android.media3.session.demo.SHUFFLE_ON"
+            "com.cappielloantonio.tempo.SHUFFLE_ON"
         private const val CUSTOM_COMMAND_TOGGLE_SHUFFLE_MODE_OFF =
-            "android.media3.session.demo.SHUFFLE_OFF"
+            "com.cappielloantonio.tempo.SHUFFLE_OFF"
     }
 }

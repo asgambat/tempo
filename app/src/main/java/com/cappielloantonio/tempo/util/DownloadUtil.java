@@ -4,10 +4,12 @@ import android.app.Notification;
 import android.content.Context;
 
 import androidx.core.app.NotificationCompat;
+import androidx.media3.common.util.BitmapLoader;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.database.DatabaseProvider;
 import androidx.media3.database.StandaloneDatabaseProvider;
 import androidx.media3.datasource.DataSource;
+import androidx.media3.datasource.DataSourceBitmapLoader;
 import androidx.media3.datasource.DataSpec;
 import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
@@ -23,6 +25,8 @@ import androidx.media3.exoplayer.offline.DownloadManager;
 import androidx.media3.exoplayer.offline.DownloadNotificationHelper;
 
 import com.cappielloantonio.tempo.service.DownloaderManager;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import java.io.File;
 import java.net.CookieHandler;
@@ -44,6 +48,7 @@ public final class DownloadUtil {
     private static DataSource.Factory dataSourceFactory;
     private static DataSource.Factory httpDataSourceFactory;
     private static DatabaseProvider databaseProvider;
+    private static ListeningExecutorService artworkExecutor;
     private static File streamingCacheDirectory;
     private static File downloadDirectory;
     private static Cache downloadCache;
@@ -76,6 +81,29 @@ public final class DownloadUtil {
         }
 
         return httpDataSourceFactory;
+    }
+
+    /**
+     * DataSource per gli artwork "pubblici": aggiunge le credenziali Subsonic solo alle richieste
+     * getCoverArt del server configurato, così gli URI esposti ad Android Auto restano senza token.
+     */
+    public static DataSource.Factory getArtworkDataSourceFactory() {
+        return new ResolvingDataSource.Factory(
+                getHttpDataSourceFactory(),
+                dataSpec -> dataSpec.withUri(MusicUtil.withCoverArtCredentials(dataSpec.uri))
+        );
+    }
+
+    public static BitmapLoader buildArtworkBitmapLoader() {
+        return new DataSourceBitmapLoader(getArtworkExecutor(), getArtworkDataSourceFactory());
+    }
+
+    private static synchronized ListeningExecutorService getArtworkExecutor() {
+        if (artworkExecutor == null) {
+            artworkExecutor = MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor());
+        }
+
+        return artworkExecutor;
     }
 
     public static synchronized DataSource.Factory getDataSourceFactory(Context context) {

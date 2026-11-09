@@ -79,7 +79,13 @@ public MutableLiveData<List<Child>> getStarredSongs(boolean random, int size) {
 
 - **`MediaService`** (una versione per flavor, v. sotto) è un Media3 `MediaLibraryService`:
   - `ExoPlayer` con `DefaultLoadControl` scalato da `Preferences.getBufferingStrategy()`, `handleAudioBecomingNoisy`, wake mode network, audio attributes default.
-  - `MediaLibrarySessionCallback` + `MediaBrowserTree` (flavor `tempo`/`play`) gestiscono browsable/ playable per **Android Auto** e controller esterni; i dati arrivano da `AutomotiveRepository`.
+  - `MediaLibraryServiceCallback` + `MediaBrowserTree` (in `main`, condivisi da tutti i flavor) gestiscono browsable/playable per **Android Auto** e controller esterni; i dati arrivano da `AutomotiveRepository`.
+    - Primo livello: `Home / Library / Downloads`; playlist, cartelle, podcast e radio stanno dentro `Library`.
+    - `Downloads` legge `DownloadDao` in background e usa l'URI offline salvato nel record `Download` (non lo rigenera), così la cache Media3 risolve il contenuto senza server; senza server l'artwork è omesso e gli item portano gli stessi extras dei brani, quindi scrobble e chronology restano attivi anche offline (`MediaManager.scrobble` esce se manca il server).
+    - `MediaBrowserTree.getItems` restituisce **un item per ogni item richiesto, nello stesso ordine** (un brano può comparire due volte in coda) e risolve i metadati di sessione con una sola query su un thread dedicato, mai sul main thread della sessione.
+    - `onPlaybackResumption` ricostruisce la coda salvata (`Queue` ordinata per `track_order`, massimo 100 elementi) e riparte dall'ultimo brano riprodotto, dall'inizio del brano (la posizione non è persistita); senza server configurato non viene proposta alcuna ripresa.
+    - Artwork: i `MediaItem` esposti all'auto hanno URI `getCoverArt` senza credenziali (`MusicUtil.getCoverArtUri`); la sessione usa un `DataSourceBitmapLoader` con `ResolvingDataSource` che autentica solo le richieste `getCoverArt` del server configurato, così l'host riceve il bitmap e non l'URL autenticato. Gli `extras` di questi item non contengono l'URI di streaming; `requestMetadata.mediaUri` resta autenticato perché è l'URI che il player deve aprire. La coda del telefono e la notifica continuano a usare gli URI autenticati.
+    - **AAOS**: i flavor `tempo`/`notquitemy` dichiarano `com.android.automotive` e `<uses-feature android:name="android.hardware.type.automotive" android:required="false"/>` nei manifest di flavor; il flavor `play` ne resta fuori per il vincolo Play sui media app (v. `docs/BUILD.md` §2.1.1).
   - **Eventi player** → side-effect: transizione/discontinuità/ended → `MediaManager.scrobble()`, `MediaManager.saveChronology()`, timestamp ripresa (`setLastPlayedTimestamp`, `setPlayingPausedTimestamp`).
   - **ReplayGain** applicato su `onTracksChanged` (`ReplayGainUtil`).
   - Flavor `tempo`/`play`: `CastPlayer` con switch automatico (`onCastSessionAvailable/Unavailable`).

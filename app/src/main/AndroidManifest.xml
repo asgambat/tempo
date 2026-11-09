@@ -12,6 +12,7 @@
     <application
         android:name="App"
         android:allowBackup="false"
+        android:appCategory="audio"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:localeConfig="@xml/locale_config"
@@ -21,7 +22,8 @@
         android:theme="@style/AppTheme.SplashScreen"
         android:usesCleartextTraffic="true">
 
-        <!-- Declare that this session demo supports Android Auto. -->
+        <!-- Android Auto (telefono). La dichiarazione AAOS (com.android.automotive) vive
+             nei manifest dei flavor tempo/notquitemy, non nel flavor play (vincolo Play). -->
         <meta-data
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/auto_app_desc" />

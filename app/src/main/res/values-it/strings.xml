@@ -419,4 +419,21 @@
 	<string name="undraw_page">unDraw</string>
 	<string name="undraw_thanks">Un ringraziamento speciale va a unDraw, senza le cui illustrazioni non avremmo potuto rendere questa applicazione più bella.</string>
 	<string name="undraw_url">https://undraw.co/</string>
+    <string name="auto_not_configured">Configura il server nell\'app per sfogliare la musica qui</string>
+    <string name="auto_home">Home</string>
+    <string name="auto_library">Libreria</string>
+    <string name="auto_downloads">Scaricati</string>
+    <string name="auto_most_played">Più ascoltati</string>
+    <string name="auto_last_played">Ultimi ascoltati</string>
+    <string name="auto_recently_added">Aggiunti di recente</string>
+    <string name="auto_recent_songs">Brani recenti</string>
+    <string name="auto_starred_tracks">Brani preferiti</string>
+    <string name="auto_starred_albums">Album preferiti</string>
+    <string name="auto_starred_artists">Artisti preferiti</string>
+    <string name="auto_random">Casuali</string>
+    <string name="auto_folders">Cartelle</string>
+    <string name="auto_playlists">Playlist</string>
+    <string name="auto_podcasts">Podcast</string>
+    <string name="auto_radio_stations">Stazioni radio</string>
+    <string name="auto_no_downloads">Nessun brano scaricato</string>
 </resources>

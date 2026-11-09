@@ -340,6 +340,11 @@ public class MediaManager {
     }
 
     public static void scrobble(MediaItem mediaItem, boolean submission) {
+        String server = Preferences.getServer();
+
+        // Anche i brani scaricati portano gli extras: senza server non c'è un client Subsonic
+        if (server == null || server.isEmpty()) return;
+
         if (mediaItem != null && mediaItem.mediaMetadata != null && mediaItem.mediaMetadata.extras != null && mediaItem.mediaMetadata.extras.getString("id") != null && Preferences.isScrobblingEnabled()) {
             getSongRepository().scrobble(mediaItem.mediaMetadata.extras.getString("id"), submission);
         }

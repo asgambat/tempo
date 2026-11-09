@@ -23,6 +23,14 @@ import java.util.List;
 @OptIn(markerClass = UnstableApi.class)
 public class MappingUtil {
     public static List<MediaItem> mapMediaItems(List<Child> items) {
+        return mapMediaItems(items, false);
+    }
+
+    /**
+     * @param publicArtwork true per gli item esposti a controller esterni (Android Auto):
+     *                      l'artwork URI non contiene credenziali Subsonic.
+     */
+    public static List<MediaItem> mapMediaItems(List<Child> items, boolean publicArtwork) {
         ArrayList<MediaItem> mediaItems = new ArrayList<>();
 
         if (items == null) {
@@ -30,49 +38,21 @@ public class MappingUtil {
         }
 
         for (int i = 0; i < items.size(); i++) {
-            mediaItems.add(mapMediaItem(items.get(i)));
+            mediaItems.add(mapMediaItem(items.get(i), publicArtwork));
         }
 
         return mediaItems;
     }
 
     public static MediaItem mapMediaItem(Child media) {
-        Uri uri = getUri(media);
-        Uri artworkUri = Uri.parse(CustomGlideRequest.createUrl(media.getCoverArtId(), Preferences.getImageSize()));
+        return mapMediaItem(media, false);
+    }
 
-        Bundle bundle = new Bundle();
-        bundle.putString("id", media.getId());
-        bundle.putString("parentId", media.getParentId());
-        bundle.putBoolean("isDir", media.isDir());
-        bundle.putString("title", media.getTitle());
-        bundle.putString("album", media.getAlbum());
-        bundle.putString("artist", media.getArtist());
-        bundle.putInt("track", media.getTrack() != null ? media.getTrack() : 0);
-        bundle.putInt("year", media.getYear() != null ? media.getYear() : 0);
-        bundle.putString("genre", media.getGenre());
-        bundle.putString("coverArtId", media.getCoverArtId());
-        bundle.putLong("size", media.getSize() != null ? media.getSize() : 0);
-        bundle.putString("contentType", media.getContentType());
-        bundle.putString("suffix", media.getSuffix());
-        bundle.putString("transcodedContentType", media.getTranscodedContentType());
-        bundle.putString("transcodedSuffix", media.getTranscodedSuffix());
-        bundle.putInt("duration", media.getDuration() != null ? media.getDuration() : 0);
-        bundle.putInt("bitrate", media.getBitrate() != null ? media.getBitrate() : 0);
-        bundle.putString("path", media.getPath());
-        bundle.putBoolean("isVideo", media.isVideo());
-        bundle.putInt("userRating", media.getUserRating() != null ? media.getUserRating() : 0);
-        bundle.putDouble("averageRating", media.getAverageRating() != null ? media.getAverageRating() : 0);
-        bundle.putLong("playCount", media.getPlayCount() != null ? media.getPlayCount() : 0);
-        bundle.putInt("discNumber", media.getDiscNumber() != null ? media.getDiscNumber() : 0);
-        bundle.putLong("created", media.getCreated() != null ? media.getCreated().getTime() : 0);
-        bundle.putLong("starred", media.getStarred() != null ? media.getStarred().getTime() : 0);
-        bundle.putString("albumId", media.getAlbumId());
-        bundle.putString("artistId", media.getArtistId());
-        bundle.putString("type", Constants.MEDIA_TYPE_MUSIC);
-        bundle.putLong("bookmarkPosition", media.getBookmarkPosition() != null ? media.getBookmarkPosition() : 0);
-        bundle.putInt("originalWidth", media.getOriginalWidth() != null ? media.getOriginalWidth() : 0);
-        bundle.putInt("originalHeight", media.getOriginalHeight() != null ? media.getOriginalHeight() : 0);
-        bundle.putString("uri", uri.toString());
+    public static MediaItem mapMediaItem(Child media, boolean publicArtwork) {
+        Uri uri = getUri(media);
+        Uri artworkUri = getArtworkUri(media.getCoverArtId(), publicArtwork);
+
+        Bundle bundle = buildMusicExtras(media, uri, !publicArtwork);
 
         return new MediaItem.Builder()
                 .setMediaId(media.getId())
@@ -84,6 +64,7 @@ public class MappingUtil {
                                 .setReleaseYear(media.getYear() != null ? media.getYear() : 0)
                                 .setAlbumTitle(media.getAlbum())
                                 .setArtist(media.getArtist())
+                                .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
                                 .setArtworkUri(artworkUri)
                                 .setExtras(bundle)
                                 .setIsBrowsable(false)
@@ -138,6 +119,148 @@ public class MappingUtil {
                 .setMimeType(MimeTypes.BASE_TYPE_AUDIO)
                 .setUri(Preferences.preferTranscodedDownload() ? MusicUtil.getTranscodedDownloadUri(media.getId()) : MusicUtil.getDownloadUri(media.getId()))
                 .build();
+    }
+
+    public static List<MediaItem> mapDownloadedItems(List<Download> items) {
+        return mapDownloadedItems(items, false);
+    }
+
+    public static List<MediaItem> mapDownloadedItems(List<Download> items, boolean publicArtwork) {
+        ArrayList<MediaItem> mediaItems = new ArrayList<>();
+
+        if (items == null) {
+            return mediaItems;
+        }
+
+        for (Download download : items) {
+            mediaItems.add(mapDownloadedItem(download, publicArtwork));
+        }
+
+        return mediaItems;
+    }
+
+    public static MediaItem mapDownloadedItem(Download download) {
+        return mapDownloadedItem(download, false);
+    }
+
+    public static MediaItem mapDownloadedItem(Download download, boolean publicArtwork) {
+        Uri uri = getStoredDownloadUri(download);
+        Uri artworkUri = publicArtwork ? getPublicArtworkUri(download.getCoverArtId()) : getDownloadArtworkUri(download.getCoverArtId());
+
+        // Gli extras servono a MediaService per scrobble e chronology anche in riproduzione offline
+        Bundle extras = buildMusicExtras(download, uri, !publicArtwork);
+
+        return new MediaItem.Builder()
+                .setMediaId(download.getId())
+                .setMediaMetadata(
+                        new MediaMetadata.Builder()
+                                .setTitle(download.getTitle())
+                                .setTrackNumber(download.getTrack() != null ? download.getTrack() : 0)
+                                .setDiscNumber(download.getDiscNumber() != null ? download.getDiscNumber() : 0)
+                                .setReleaseYear(download.getYear() != null ? download.getYear() : 0)
+                                .setAlbumTitle(download.getAlbum())
+                                .setArtist(download.getArtist())
+                                .setArtworkUri(artworkUri)
+                                .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
+                                .setExtras(extras)
+                                .setIsBrowsable(false)
+                                .setIsPlayable(true)
+                                .build()
+                )
+                .setRequestMetadata(
+                        new MediaItem.RequestMetadata.Builder()
+                                .setMediaUri(uri)
+                                .setExtras(extras)
+                                .build()
+                )
+                .setMimeType(MimeTypes.BASE_TYPE_AUDIO)
+                .setUri(uri)
+                .build();
+    }
+
+    private static Bundle buildMusicExtras(Child media, Uri uri, boolean includeUri) {
+        Bundle bundle = new Bundle();
+        bundle.putString("id", media.getId());
+        bundle.putString("parentId", media.getParentId());
+        bundle.putBoolean("isDir", media.isDir());
+        bundle.putString("title", media.getTitle());
+        bundle.putString("album", media.getAlbum());
+        bundle.putString("artist", media.getArtist());
+        bundle.putInt("track", media.getTrack() != null ? media.getTrack() : 0);
+        bundle.putInt("year", media.getYear() != null ? media.getYear() : 0);
+        bundle.putString("genre", media.getGenre());
+        bundle.putString("coverArtId", media.getCoverArtId());
+        bundle.putLong("size", media.getSize() != null ? media.getSize() : 0);
+        bundle.putString("contentType", media.getContentType());
+        bundle.putString("suffix", media.getSuffix());
+        bundle.putString("transcodedContentType", media.getTranscodedContentType());
+        bundle.putString("transcodedSuffix", media.getTranscodedSuffix());
+        bundle.putInt("duration", media.getDuration() != null ? media.getDuration() : 0);
+        bundle.putInt("bitrate", media.getBitrate() != null ? media.getBitrate() : 0);
+        bundle.putString("path", media.getPath());
+        bundle.putBoolean("isVideo", media.isVideo());
+        bundle.putInt("userRating", media.getUserRating() != null ? media.getUserRating() : 0);
+        bundle.putDouble("averageRating", media.getAverageRating() != null ? media.getAverageRating() : 0);
+        bundle.putLong("playCount", media.getPlayCount() != null ? media.getPlayCount() : 0);
+        bundle.putInt("discNumber", media.getDiscNumber() != null ? media.getDiscNumber() : 0);
+        bundle.putLong("created", media.getCreated() != null ? media.getCreated().getTime() : 0);
+        bundle.putLong("starred", media.getStarred() != null ? media.getStarred().getTime() : 0);
+        bundle.putString("albumId", media.getAlbumId());
+        bundle.putString("artistId", media.getArtistId());
+        bundle.putString("type", Constants.MEDIA_TYPE_MUSIC);
+        bundle.putLong("bookmarkPosition", media.getBookmarkPosition() != null ? media.getBookmarkPosition() : 0);
+        bundle.putInt("originalWidth", media.getOriginalWidth() != null ? media.getOriginalWidth() : 0);
+        bundle.putInt("originalHeight", media.getOriginalHeight() != null ? media.getOriginalHeight() : 0);
+
+        // L'URI di streaming contiene le credenziali Subsonic e gli extras sono trasmessi ai
+        // controller: niente chiave "uri" negli item esposti ad Android Auto (publicArtwork).
+        if (includeUri) bundle.putString("uri", uri.toString());
+
+        return bundle;
+    }
+
+    private static Uri getStoredDownloadUri(Download download) {
+        String storedUri = download.getDownloadUri();
+
+        if (storedUri != null && !storedUri.isEmpty()) {
+            return Uri.parse(storedUri);
+        }
+
+        // Senza server non c'è un client Subsonic da interrogare: l'item resta non riproducibile
+        return isServerConfigured() ? MusicUtil.getDownloadUri(download.getId()) : Uri.parse("");
+    }
+
+    private static Uri getArtworkUri(String coverArtId, boolean publicArtwork) {
+        if (publicArtwork) return getPublicArtworkUri(coverArtId);
+
+        return Uri.parse(CustomGlideRequest.createUrl(coverArtId, Preferences.getImageSize()));
+    }
+
+    /**
+     * Artwork URI senza credenziali Subsonic, per i MediaItem esposti ad Android Auto.
+     * Il BitmapLoader della sessione aggiunge l'autenticazione al momento del caricamento.
+     */
+    public static Uri getPublicArtworkUri(String coverArtId) {
+        if (coverArtId == null || coverArtId.isEmpty() || !isServerConfigured()) {
+            return null;
+        }
+
+        return MusicUtil.getCoverArtUri(coverArtId, Preferences.getImageSize());
+    }
+
+    private static Uri getDownloadArtworkUri(String coverArtId) {
+        if (coverArtId == null || coverArtId.isEmpty() || !isServerConfigured()) {
+            return null;
+        }
+
+        return Uri.parse(CustomGlideRequest.createUrl(coverArtId, Preferences.getImageSize()));
+    }
+
+    public static boolean isServerConfigured() {
+        String serverId = Preferences.getServerId();
+        String server = Preferences.getServer();
+
+        return serverId != null && !serverId.isEmpty() && server != null && !server.isEmpty();
     }
 
     public static MediaItem mapInternetRadioStation(InternetRadioStation internetRadioStation) {

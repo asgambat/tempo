@@ -15,7 +15,7 @@ public interface QueueDao {
     @Query("SELECT * FROM queue")
     LiveData<List<Queue>> getAll();
 
-    @Query("SELECT * FROM queue")
+    @Query("SELECT * FROM queue ORDER BY track_order")
     List<Queue> getAllSimple();
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
