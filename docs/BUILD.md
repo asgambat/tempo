@@ -196,14 +196,14 @@ Workflow: `.github/workflows/github_release.yml` — scatta su **tag `x.y.z`**:
 
 ### Build continua (develop)
 
-Workflow: `.github/workflows/build_develop.yml` — scatta su ogni **push su `develop`**:
+Workflow: `.github/workflows/build_develop.yml` — scatta su ogni **push su `develop`** e costruisce **solo il flavor `tempo`**:
 
-1. Un'unica esecuzione Gradle: `assembleNotquitemyDebug assemblePlayDebug assembleTempoRelease`.
+1. Un'unica esecuzione Gradle: `assembleTempoRelease`.
 2. Verifica rapida del segreto `KEYSTORE_BASE64` (decodifica + `keytool -list`, saltata sui fork senza segreti).
 3. Firma dell'APK release `tempo` con i segreti GitHub (gli stessi di `github_release.yml`, azione `ilharp/sign-android-release@v2`).
-4. Upload artifact scaricabili dalla pagina del run: `Tempo-<versione>-signed-release`, `Notquitemy-<versione>-debug`, `Play-<versione>-debug` (retenzione 14 giorni, concorrenza: i push successivi annullano il run in corso).
+4. Upload dell'artifact `Tempo-<versione>-signed-release`, scaricabile dalla pagina del run (retenzione 14 giorni, concorrenza: i push successivi annullano il run in corso). Gli altri flavor restano compilabili in locale (`assembleNotquitemyDebug`, `assemblePlayDebug`) ma non sono più prodotti dalla CI.
 
-⚠️ La firma richiede i segreti `KEYSTORE_BASE64`, `KEY_ALIAS_GITHUB`, `KEYSTORE_PASSWORD`, `KEY_PASSWORD_GITHUB`: su fork senza segreti il passaggio di firma fallisce (i due APK debug restano validi).
+⚠️ La firma richiede i segreti `KEYSTORE_BASE64`, `KEY_ALIAS_GITHUB`, `KEYSTORE_PASSWORD`, `KEY_PASSWORD_GITHUB`: su fork senza segreti il passaggio di firma fallisce e il run non produce artifact.
 
 ### Checklist release
 

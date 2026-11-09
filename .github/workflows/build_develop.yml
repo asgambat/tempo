@@ -63,8 +63,8 @@ jobs:
         id: version
         run: echo "name=$(grep -oP "versionName '\K[^']+" app/build.gradle)" >> "$GITHUB_OUTPUT"
 
-      - name: Build APKs
-        run: bash ./gradlew assembleNotquitemyDebug assemblePlayDebug assembleTempoRelease
+      - name: Build tempo release APK
+        run: bash ./gradlew assembleTempoRelease
 
       - name: Setup build tool version variable
         shell: bash
@@ -89,21 +89,5 @@ jobs:
         with:
           name: Tempo-${{ steps.version.outputs.name }}-signed-release
           path: ${{ steps.sign_apk.outputs.signedFile }}
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload Notquitemy debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Notquitemy-${{ steps.version.outputs.name }}-debug
-          path: app/build/outputs/apk/notquitemy/debug/*.apk
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload Play debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Play-${{ steps.version.outputs.name }}-debug
-          path: app/build/outputs/apk/play/debug/*.apk
           if-no-files-found: error
           retention-days: 14

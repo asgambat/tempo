@@ -167,7 +167,7 @@ Mappa dei package sotto `app/src/main/java/com/cappielloantonio/tempo/`:
 1. Bump `versionCode`/`versionName` in `app/build.gradle`.
 2. Changelog fastlane (§7.5) + eventuali screenshot in `fastlane/metadata/android/en-US/images/`.
 3. Tag `x.y.z` → workflow `.github/workflows/github_release.yml` (build `assembleTempoRelease`, firma, GitHub Release). Dettagli in `docs/BUILD.md`.
-4. Build continua: ogni push su `develop` → `.github/workflows/build_develop.yml` produce gli artifact (tempo release firmato + notquitemy/play debug, 14 giorni di retenzione); il workflow di release non va modificato senza richiesta esplicita.
+4. Build continua: ogni push su `develop` → `.github/workflows/build_develop.yml` costruisce **solo il flavor `tempo`** e produce l'artifact `Tempo-<versione>-signed-release` (14 giorni di retenzione); il workflow di release non va modificato senza richiesta esplicita.
 
 ## 8. Insidie note e debito tecnico (leggere prima di rifattorizzare)
 

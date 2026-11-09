@@ -435,7 +435,7 @@ public class AutomotiveRepository {
                                                 .setIsBrowsable(true)
                                                 .setIsPlayable(false)
                                                 .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
-                                                .setArtworkUri(MappingUtil.getPublicArtworkUri(child.getCoverArtId()))
+                                                .setArtworkUri(MappingUtil.getPublicArtworkUri(child.getCoverArtId(), child.getAlbumId()))
                                                 .build();
 
                                         mediaItems.add(new MediaItem.Builder()
@@ -486,7 +486,7 @@ public class AutomotiveRepository {
                             List<MediaItem> mediaItems = new ArrayList<>();
 
                             for (Child child : directory.getChildren()) {
-                                Uri artworkUri = MappingUtil.getPublicArtworkUri(child.getCoverArtId());
+                                Uri artworkUri = MappingUtil.getPublicArtworkUri(child.getCoverArtId(), child.getAlbumId());
 
                                 MediaMetadata mediaMetadata = new MediaMetadata.Builder()
                                         .setTitle(child.getTitle())

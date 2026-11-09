@@ -15,6 +15,7 @@ import com.cappielloantonio.tempo.subsonic.models.Child
 import com.cappielloantonio.tempo.subsonic.models.InternetRadioStation
 import com.cappielloantonio.tempo.subsonic.models.PodcastEpisode
 import com.cappielloantonio.tempo.util.Constants
+import com.cappielloantonio.tempo.util.MappingUtil
 import com.cappielloantonio.tempo.util.MusicUtil
 import com.cappielloantonio.tempo.util.Preferences.getImageSize
 import java.util.Date
@@ -195,8 +196,12 @@ class SessionMediaItem() {
 
     fun getMediaItem(): MediaItem {
         val uri: Uri = getStreamUri()
-        // Metadati usati solo per Android Auto: l'artwork URI non deve contenere credenziali
-        val artworkUri = MusicUtil.getCoverArtUri(coverArtId, getImageSize())
+        // Metadati usati solo per Android Auto: l'artwork URI non deve contenere credenziali.
+        // Senza coverArtId si usa albumId; se manca anche quello niente URI: un "id=null" sarebbe
+        // uguale per tutti i brani e l'host terrebbe la copertina dell'album precedente.
+        val artworkUri = MappingUtil.getArtworkId(coverArtId, albumId)?.let {
+            MusicUtil.getCoverArtUri(it, getImageSize())
+        }
 
         val bundle = Bundle()
         bundle.putString("id", id)

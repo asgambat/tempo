@@ -50,7 +50,7 @@ public class MappingUtil {
 
     public static MediaItem mapMediaItem(Child media, boolean publicArtwork) {
         Uri uri = getUri(media);
-        Uri artworkUri = getArtworkUri(media.getCoverArtId(), publicArtwork);
+        Uri artworkUri = getArtworkUri(media.getCoverArtId(), media.getAlbumId(), publicArtwork);
 
         Bundle bundle = buildMusicExtras(media, uri, !publicArtwork);
 
@@ -230,22 +230,45 @@ public class MappingUtil {
         return isServerConfigured() ? MusicUtil.getDownloadUri(download.getId()) : Uri.parse("");
     }
 
-    private static Uri getArtworkUri(String coverArtId, boolean publicArtwork) {
-        if (publicArtwork) return getPublicArtworkUri(coverArtId);
+    /**
+     * Id da usare in getCoverArt per un brano. Alcuni server non espongono "coverArt" sui singoli
+     * brani ma solo sull'album: in quel caso si usa albumId, così ogni album ha il suo artwork.
+     * Restituisce null quando non c'è nessun id: un URI costruito con "id=null" sarebbe identico
+     * per tutti i brani e l'host (Android Auto) continuerebbe a mostrare la copertina precedente.
+     */
+    public static String getArtworkId(String coverArtId, String albumId) {
+        if (coverArtId != null && !coverArtId.isEmpty()) return coverArtId;
+        if (albumId != null && !albumId.isEmpty()) return albumId;
 
-        return Uri.parse(CustomGlideRequest.createUrl(coverArtId, Preferences.getImageSize()));
+        return null;
+    }
+
+    private static Uri getArtworkUri(String coverArtId, String albumId, boolean publicArtwork) {
+        if (publicArtwork) return getPublicArtworkUri(coverArtId, albumId);
+
+        String artworkId = getArtworkId(coverArtId, albumId);
+
+        if (artworkId == null) return null;
+
+        return Uri.parse(CustomGlideRequest.createUrl(artworkId, Preferences.getImageSize()));
+    }
+
+    public static Uri getPublicArtworkUri(String coverArtId) {
+        return getPublicArtworkUri(coverArtId, null);
     }
 
     /**
      * Artwork URI senza credenziali Subsonic, per i MediaItem esposti ad Android Auto.
      * Il BitmapLoader della sessione aggiunge l'autenticazione al momento del caricamento.
      */
-    public static Uri getPublicArtworkUri(String coverArtId) {
-        if (coverArtId == null || coverArtId.isEmpty() || !isServerConfigured()) {
+    public static Uri getPublicArtworkUri(String coverArtId, String albumId) {
+        String artworkId = getArtworkId(coverArtId, albumId);
+
+        if (artworkId == null || !isServerConfigured()) {
             return null;
         }
 
-        return MusicUtil.getCoverArtUri(coverArtId, Preferences.getImageSize());
+        return MusicUtil.getCoverArtUri(artworkId, Preferences.getImageSize());
     }
 
     private static Uri getDownloadArtworkUri(String coverArtId) {
