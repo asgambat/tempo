@@ -1,4 +1,4 @@
-# Convenzioni di progetto — Tempo
+# Convenzioni di progetto — Andropausa
 
 > Come si scrive codice in questo repo. Le regole dure sono riassunte in [`AGENTS.MD`](../AGENTS.MD); questa pagina aggiunge esempi e motivazioni.
 

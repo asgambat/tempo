@@ -27,7 +27,7 @@
     <string name="album_page_release_dates_label">Выпущен %1$s, оригинал %2$s</string>
     <string name="album_page_shuffle_button">Смешать</string>
     <string name="album_page_tracks_count_and_duration">%1$d треков • %2$d минут</string>
-    <string name="app_name">Tempo</string>
+    <string name="app_name">Andropausa</string>
     <string name="artist_adapter_radio_station_starting">Поиск…</string>
     <string name="artist_bottom_sheet_instant_mix">Мгновенный микс</string>
     <string name="artist_bottom_sheet_shuffle">Смешать</string>

@@ -1,4 +1,4 @@
-# Architettura — Tempo
+# Architettura — Andropausa
 
 > Doc tecnica di riferimento. Le regole operative sintetiche sono in [`AGENTS.MD`](../AGENTS.MD); le convenzioni di codice in [`CONVENTIONS.md`](CONVENTIONS.md).
 

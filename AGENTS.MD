@@ -8,8 +8,8 @@
 
 ## 1. Il progetto in 30 secondi
 
-- **Tempo** — client musicale open source (GPLv3) per server **Subsonic / OpenSubsonic**, nativo Android, UI *View-based* (niente Jetpack Compose), single-activity + Fragment + ViewBinding.
-- Single module `:app`, namespace `com.cappielloantonio.tempo`. Versione di riferimento: **4.0.1 (versionCode 28)**.
+- **Andropausa** — client musicale open source (GPLv3) per server **Subsonic / OpenSubsonic**, nativo Android, UI *View-based* (niente Jetpack Compose), single-activity + Fragment + ViewBinding.
+- Single module `:app`, namespace `com.cappielloantonio.tempo`. La versione corrente non va duplicata qui: l'unica fonte di verità è `versionCode`/`versionName` in `app/build.gradle`.
 - **Nessun framework DI** (niente Hilt/Dagger), **nessuna coroutine/RxJava**: si usano singleton espliciti (`App`, `AppDatabase`), `LiveData`/`MutableLiveData`, Retrofit in enqueue. Le scritture Room passano da un `ExecutorService` a thread singolo in `QueueRepository`; gli altri repository usano `Thread` espliciti per le letture sincrone.
 - Server remoto: branch `main` (stabile) e `develop` (lavoro corrente).
 - Il client REST per GitHub (check aggiornamenti) è separato, nel package `github/`.

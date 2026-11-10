@@ -27,7 +27,7 @@
 	<string name="album_page_release_dates_label">Rilasciato il %1$s, originariamente il %2$s</string>
 	<string name="album_page_shuffle_button">Riproduzione casuale</string>
 	<string name="album_page_tracks_count_and_duration">%1$d brani  •  %2$d minuti</string>
-	<string name="app_name">Tempo</string>
+	<string name="app_name">Andropausa</string>
 	<string name="artist_adapter_radio_station_starting">Ricerca in corso…</string>
 	<string name="artist_bottom_sheet_instant_mix">Mix istantaneo</string>
 	<string name="artist_bottom_sheet_shuffle">Riproduzione casuale</string>

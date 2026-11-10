@@ -2,11 +2,11 @@
 
 **Base commit:** `1f9f1ffe` (develop, 2026-11-09) · **Categoria:** qualità + robustezza · **Sforzo:** M (2-4 giornate, di cui almeno mezza in auto/DHU) · **Rischio:** medio
 **Stato:** PROPOSTO (2026-11-09) — decisioni chiuse il 2026-11-09 (v. §4); codice non ancora toccato
-**Sostituisce:** `plans/009-aaos-full-support.md` (supporto AAOS-only), ritirato lo stesso giorno: **non** vogliamo un'app Android Automotive, vogliamo che Tempo funzioni bene su **Android Auto** (proiezione dal telefono).
+**Sostituisce:** `plans/009-aaos-full-support.md` (supporto AAOS-only), ritirato lo stesso giorno: **non** vogliamo un'app Android Automotive, vogliamo che Andropausa funzioni bene su **Android Auto** (proiezione dal telefono).
 
 ## Risposta breve
 
-Tempo resta **un'app telefono**. Android Auto è una superficie di proiezione: l'app espone il
+Andropausa resta **un'app telefono**. Android Auto è una superficie di proiezione: l'app espone il
 `MediaLibraryService` e l'albero browsable, l'host disegna la UI. Questa impalcatura è già stata
 costruita e consolidata dal piano 008 — non serve un flavor nuovo, una UI templated, una
 dipendenza nuova o un artefatto separato.
@@ -98,8 +98,7 @@ che l'auto mostri una sessione "telefonica" quando il Cast è attivo.
 Nessuna modifica al Cast player senza misura: è la parte più delicata dei flavor `tempo`/`play`.
 
 ### A6 — Ricerca vocale (P2, verifica)
-L'azione `MEDIA_PLAY_FROM_SEARCH` è dichiarata nel manifest. Da verificare in auto che "riproduci
-<album/brano> su Tempo" produca risultati e avvii la riproduzione, e che una query senza risultati
+L'azione `MEDIA_PLAY_FROM_SEARCH` è dichiarata nel manifest. Da verificare in auto che "riproduci <album/brano> su Andropausa" produca risultati e avvii la riproduzione, e che una query senza risultati
 dia un messaggio invece del silenzio. Se Media3 non copre il caso, valutare un
 `onPlayFromSearch` esplicito che riusa `MediaBrowserTree.search` — solo dopo la verifica.
 
@@ -144,7 +143,7 @@ resta: è la dichiarazione Android Auto, in `main`, per tutti i flavor.
 | D7 | Errori non azionabili | **Due messaggi distinti** (non configurato / server irraggiungibile); intent di risoluzione solo se Media3 1.5.1 lo supporta. |
 | D8 | Ricerca vocale | **Verificare**; l'override `onPlayFromSearch` si introduce solo se la verifica mostra che la voce non funziona (evita di duplicare il percorso Media3). |
 
-**Nota distribuzione:** Tempo è distribuita solo via F-Droid/GitHub, quindi non ci sono vincoli di
+**Nota distribuzione:** Andropausa è distribuita solo via F-Droid/GitHub, quindi non ci sono vincoli di
 quality review Play su questo piano. Il flavor `play` resta com'è; la pulizia AAOS riguarda
 `tempo`/`notquitemy` e non tocca `applicationId` né `versionCode`.
 
@@ -184,7 +183,7 @@ quality review Play su questo piano. Il flavor `play` resta com'è; la pulizia A
 - Comportamento Cast documentato (D5).
 
 ### Fase 4 — Ricerca vocale (A6, differita)
-- Test vocale su DHU/auto ("riproduci <album/brano> su Tempo"), incluso il caso senza risultati.
+- Test vocale su DHU/auto ("riproduci <album/brano> su Andropausa"), incluso il caso senza risultati.
 - Solo se la ricerca non parte: `onPlayFromSearch` che riusa `MediaBrowserTree.search` e accoda i
   risultati. Senza verifica manuale non si introduce l'override: rischia di duplicare il percorso
   già gestito da Media3.
@@ -274,7 +273,7 @@ Checklist manuale (DHU, auto reale dove possibile):
 - Distribuzione: solo F-Droid/GitHub, nessun vincolo Play da considerare in questo piano.
 
 **2026-11-09 — Piano riscritto.**
-- Direzione cambiata su richiesta: niente app AAOS-only; obiettivo è l'ottimizzazione di Tempo su
+- Direzione cambiata su richiesta: niente app AAOS-only; obiettivo è l'ottimizzazione di Andropausa su
   Android Auto (proiezione). Ritirato `plans/009-aaos-full-support.md`, che proponeva flavor
   `aaos`, artifact Play AAOS-only e settings in auto.
 - La base tecnica resta quella della 008 (albero condiviso, paging, ricerca, ripresa, offline,

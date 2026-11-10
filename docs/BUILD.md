@@ -1,4 +1,4 @@
-# Build, varianti e release — Tempo
+# Build, varianti e release — Andropausa
 
 > Istruzioni operative per compilare, firmare e rilasciare. Regole sintetiche in [`AGENTS.MD`](../AGENTS.MD).
 

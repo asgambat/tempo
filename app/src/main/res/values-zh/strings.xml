@@ -25,7 +25,7 @@
     <string name="album_page_play_button">播放</string>
     <string name="album_page_shuffle_button">随机播放</string>
     <string name="album_page_tracks_count_and_duration">%1$d 首歌曲 • %2$d 分钟</string>
-    <string name="app_name">Tempo</string>
+    <string name="app_name">Andropausa</string>
     <string name="artist_adapter_radio_station_starting">正在搜索...</string>
     <string name="artist_bottom_sheet_instant_mix">即时混合</string>
     <string name="artist_bottom_sheet_shuffle">随机播放</string>

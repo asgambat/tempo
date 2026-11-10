@@ -1,0 +1,4 @@
+Added Andropausa Android Auto support: browse your library and play music from the car screen
+Fixed folders shown as empty and songs missing in Andropausa Android Auto
+Fixed the album artwork staying on the previous album when changing album in Andropausa Android Auto
+Added favorite folders, available from the Andropausa home screen
