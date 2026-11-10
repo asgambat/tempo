@@ -4,25 +4,25 @@
     android:viewportWidth="307.57"
     android:viewportHeight="278.96">
 
-  <!-- Sfondo cerchio rosa -->
-  <circle
-      android:cx="153.785"
-      android:cy="139.48"
-      android:r="130"
+  <!-- Cerchio esterno rosa usando path -->
+  <path
+      android:pathData="M153.785 130
+          a 130 130 0 1 0 0 260
+          a 130 130 0 1 0 0 -260"
       android:fillColor="#f24b6a"/>
 
-  <!-- Cerchio interno azzurro chiaro -->
-  <circle
-      android:cx="153.785"
-      android:cy="139.48"
-      android:r="80"
+  <!-- Cerchio interno azzurro chiaro usando path -->
+  <path
+      android:pathData="M153.785 130
+          a 80 80 0 1 0 0 160
+          a 80 80 0 1 0 0 -160"
       android:fillColor="#89CFF0"/>
 
-  <!-- Punto bianco al centro -->
-  <circle
-      android:cx="153.785"
-      android:cy="139.48"
-      android:r="24"
+  <!-- Punto bianco al centro usando path -->
+  <path
+      android:pathData="M153.785 130
+          a 24 24 0 1 0 0 48
+          a 24 24 0 1 0 0 -48"
       android:fillColor="#fff"/>
 
   <!-- 4 accenti rosa che collegano i cerchi -->

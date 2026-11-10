@@ -4,25 +4,23 @@
     android:viewportWidth="288"
     android:viewportHeight="288">
 
-  <!-- Cerchio esterno rosa -->
-  <circle
-      android:cx="144"
-      android:cy="144"
-      android:r="120"
+  <!-- Cerchi usando path (al posto di circle) -->
+  <path
+      android:pathData="M144 120
+          a 120 120 0 1 0 0 240
+          a 120 120 0 1 0 0 -240"
       android:fillColor="#f24b6a"/>
 
-  <!-- Cerchio interno azzurro chiaro -->
-  <circle
-      android:cx="144"
-      android:cy="144"
-      android:r="80"
+  <path
+      android:pathData="M144 120
+          a 80 80 0 1 0 0 160
+          a 80 80 0 1 0 0 -160"
       android:fillColor="#89CFF0"/>
 
-  <!-- Piccolo cerchio bianco al centro -->
-  <circle
-      android:cx="144"
-      android:cy="144"
-      android:r="24"
+  <path
+      android:pathData="M144 144
+          a 24 24 0 1 0 0 48
+          a 24 24 0 1 0 0 -48"
       android:fillColor="#fff"/>
 
   <!-- Accenti rosa attorno al cerchio interno -->
