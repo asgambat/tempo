@@ -46,6 +46,13 @@
             </intent-filter>
         </activity>
 
+        <!--  Copertine in cache per Android Auto: read-only, nessuna enumerazione (v. ArtworkProvider)  -->
+        <provider
+            android:name=".provider.ArtworkProvider"
+            android:authorities="${applicationId}.artwork"
+            android:exported="true"
+            android:grantUriPermissions="false" />
+
         <service
             android:name=".service.MediaService"
             android:exported="true"

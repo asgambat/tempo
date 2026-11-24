@@ -23,9 +23,14 @@ import java.util.Comparator;
 import java.util.List;
 
 public class AlbumCatalogueAdapter extends RecyclerView.Adapter<AlbumCatalogueAdapter.ViewHolder> implements Filterable {
+    public interface OnItemsChangedListener {
+        void onItemsChanged();
+    }
+
     private final ClickCallback click;
     private String currentFilter;
     private boolean showArtist;
+    private OnItemsChangedListener itemsChangedListener;
 
     private final Filter filtering = new Filter() {
         @Override
@@ -55,6 +60,7 @@ public class AlbumCatalogueAdapter extends RecyclerView.Adapter<AlbumCatalogueAd
         protected void publishResults(CharSequence constraint, FilterResults results) {
             albums = (List<AlbumID3>) results.values;
             notifyDataSetChanged();
+            notifyItemsChanged();
         }
     };
 
@@ -117,6 +123,18 @@ public class AlbumCatalogueAdapter extends RecyclerView.Adapter<AlbumCatalogueAd
     @Override
     public Filter getFilter() {
         return filtering;
+    }
+
+    // Il filtro è asincrono: chi disegna un indice sopra la lista deve sapere quando la lista
+    // mostrata cambia davvero, non solo quando vengono passati nuovi dati.
+    public void setOnItemsChangedListener(OnItemsChangedListener listener) {
+        this.itemsChangedListener = listener;
+    }
+
+    private void notifyItemsChanged() {
+        if (itemsChangedListener != null) {
+            itemsChangedListener.onItemsChanged();
+        }
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {

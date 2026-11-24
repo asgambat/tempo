@@ -15,7 +15,9 @@ import com.cappielloantonio.tempo.subsonic.models.Child;
 import com.cappielloantonio.tempo.subsonic.models.PlayQueue;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -127,6 +129,45 @@ public class QueueRepository {
         QUEUE_EXECUTOR.execute(queueDao::deleteAll);
     }
 
+    /**
+     * Sostituisce l'intera coda con {@code media} (fire-and-forget, come le altre mutazioni).
+     * Serve ai controller che impostano la coda direttamente sul player (Android Auto): gli stati
+     * di riproduzione già salvati per gli stessi brani vengono conservati, così la ripresa resta
+     * valida dopo il rimpiazzo.
+     */
+    public void replaceAll(List<Child> media) {
+        if (media == null) return;
+
+        QUEUE_EXECUTOR.execute(() -> {
+            Map<String, Queue> previous = new HashMap<>();
+            List<Queue> existing = queueDao.getAllSimple();
+
+            if (existing != null) {
+                for (Queue queueItem : existing) {
+                    previous.put(queueItem.getId(), queueItem);
+                }
+            }
+
+            List<Queue> queue = new ArrayList<>();
+
+            for (int i = 0; i < media.size(); i++) {
+                Queue item = new Queue(media.get(i));
+                Queue old = previous.get(item.getId());
+
+                if (old != null) {
+                    item.setLastPlay(old.getLastPlay());
+                    item.setPlayingChanged(old.getPlayingChanged());
+                    item.setStreamId(old.getStreamId());
+                }
+
+                item.setTrackOrder(i);
+                queue.add(item);
+            }
+
+            replaceQueue(queue);
+        });
+    }
+
     public int count() {
         Integer count = awaitOnQueueThread(queueDao::count);
         return count != null ? count : 0;
@@ -204,8 +245,19 @@ public class QueueRepository {
             media.get(i).setTrackOrder(i);
         }
 
-        queueDao.deleteAll();
-        queueDao.insertAll(media);
+        replaceQueue(media);
+    }
+
+    /**
+     * Riscrive la coda in una sola transazione: la LiveData della coda non vede mai lo stato
+     * intermedio vuoto tra la delete-all e la insert-all, e un errore in scrittura non lascia la
+     * coda cancellata.
+     */
+    private void replaceQueue(List<Queue> media) {
+        AppDatabase.getInstance().runInTransaction(() -> {
+            queueDao.deleteAll();
+            queueDao.insertAll(media);
+        });
     }
 
     private static <T> T awaitOnQueueThread(Callable<T> task) {

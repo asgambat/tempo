@@ -81,10 +81,17 @@
             android:layout_height="wrap_content"
             android:clipToPadding="false"
             android:paddingTop="16dp"
-            android:paddingStart="16dp"
+            android:paddingStart="44dp"
             android:paddingEnd="16dp"
             android:paddingBottom="@dimen/global_padding_bottom"
             app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+
+        <com.cappielloantonio.tempo.helper.recyclerview.AlphabetIndexBar
+            android:id="@+id/album_catalogue_alphabet_index_bar"
+            android:layout_width="36dp"
+            android:layout_height="44dp"
+            android:layout_gravity="start|center_vertical"
+            android:layout_marginStart="4dp" />
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </LinearLayout>
 

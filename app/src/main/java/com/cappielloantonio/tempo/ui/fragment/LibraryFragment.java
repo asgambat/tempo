@@ -14,6 +14,7 @@ import androidx.media3.common.util.UnstableApi;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.cappielloantonio.tempo.R;
 import com.cappielloantonio.tempo.databinding.FragmentLibraryBinding;
@@ -36,9 +37,11 @@ import com.cappielloantonio.tempo.viewmodel.LibraryViewModel;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @UnstableApi
@@ -152,6 +155,9 @@ public class LibraryFragment extends Fragment implements ClickCallback {
 
         musicFolderAdapter = new MusicFolderAdapter(this);
         bind.musicFolderRecyclerView.setAdapter(musicFolderAdapter);
+
+        bind.musicFolderAlphabetIndexBar.setOnPositionSelectedListener(this::scrollToMusicFolder);
+        bind.musicFolderAlphabetIndexBar.watchScroll(bind.fragmentLibraryNestedScrollView, bind.musicFolderRecyclerView);
         libraryViewModel.getMusicFolders(getViewLifecycleOwner()).observe(getViewLifecycleOwner(), musicFolders -> {
             if (musicFolders == null) {
                 if (bind != null) bind.libraryMusicFolderSector.setVisibility(View.GONE);
@@ -159,7 +165,18 @@ public class LibraryFragment extends Fragment implements ClickCallback {
                 if (bind != null)
                     bind.libraryMusicFolderSector.setVisibility(!musicFolders.isEmpty() ? View.VISIBLE : View.GONE);
 
-                musicFolderAdapter.setItems(musicFolders);
+                // L'indice A-Z ha senso solo con un ordine alfabetico: le music folder arrivano
+                // nell'ordine del server, quindi si ordinano qui per nome, con lo stesso criterio
+                // delle directory (accenti ignorati) e senza fidarsi dei nomi nulli del server.
+                List<MusicFolder> sortedMusicFolders = new ArrayList<>(musicFolders);
+                Collator collator = Collator.getInstance();
+                collator.setStrength(Collator.PRIMARY);
+                sortedMusicFolders.sort((first, second) -> collator.compare(musicFolderName(first), musicFolderName(second)));
+
+                musicFolderAdapter.setItems(sortedMusicFolders);
+
+                if (bind != null)
+                    bind.musicFolderAlphabetIndexBar.setTitles(sortedMusicFolders.stream().map(MusicFolder::getName).collect(Collectors.toList()));
             }
         });
 
@@ -180,6 +197,36 @@ public class LibraryFragment extends Fragment implements ClickCallback {
                 musicFolderAdapter.setFavoriteFolderIds(favoriteFolderIds);
             }
         });
+    }
+
+    private static String musicFolderName(@Nullable MusicFolder musicFolder) {
+        return musicFolder != null && musicFolder.getName() != null ? musicFolder.getName() : "";
+    }
+
+    private void scrollToMusicFolder(int position) {
+        if (bind == null) return;
+
+        RecyclerView.LayoutManager layoutManager = bind.musicFolderRecyclerView.getLayoutManager();
+
+        if (!(layoutManager instanceof LinearLayoutManager)) return;
+
+        // La lista è espansa dentro la NestedScrollView: si scorre il contenitore esterno.
+        View item = layoutManager.findViewByPosition(position);
+
+        if (item == null) return;
+
+        // Delta in coordinate assolute: la somma dei getTop() ignorava padding della lista e
+        // offset del contenitore scorrevole, lasciando la cartella sotto la toolbar.
+        int[] itemLocation = new int[2];
+        int[] scrollLocation = new int[2];
+        item.getLocationOnScreen(itemLocation);
+        bind.fragmentLibraryNestedScrollView.getLocationOnScreen(scrollLocation);
+
+        int offset = bind.fragmentLibraryNestedScrollView.getScrollY()
+                + (itemLocation[1] - scrollLocation[1])
+                - bind.fragmentLibraryNestedScrollView.getPaddingTop();
+
+        bind.fragmentLibraryNestedScrollView.smoothScrollTo(0, Math.max(0, offset));
     }
 
     private void initAlbumView() {

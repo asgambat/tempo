@@ -6,6 +6,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.cappielloantonio.tempo.subsonic.models.Child
+import com.cappielloantonio.tempo.util.Constants
 import com.cappielloantonio.tempo.util.Preferences
 import kotlinx.parcelize.Parcelize
 import java.util.*
@@ -20,37 +21,37 @@ class Chronology(@PrimaryKey override val id: String) : Child(id) {
     @ColumnInfo(name = "server")
     var server: String? = null
 
-    constructor(mediaItem: MediaItem) : this(mediaItem.mediaMetadata.extras!!.getString("id")!!) {
-        parentId = mediaItem.mediaMetadata.extras!!.getString("parentId")
-        isDir = mediaItem.mediaMetadata.extras!!.getBoolean("isDir")
-        title = mediaItem.mediaMetadata.extras!!.getString("title")
-        album = mediaItem.mediaMetadata.extras!!.getString("album")
-        artist = mediaItem.mediaMetadata.extras!!.getString("artist")
-        track = mediaItem.mediaMetadata.extras!!.getInt("track")
-        year = mediaItem.mediaMetadata.extras!!.getInt("year")
-        genre = mediaItem.mediaMetadata.extras!!.getString("genre")
-        coverArtId = mediaItem.mediaMetadata.extras!!.getString("coverArtId")
-        size = mediaItem.mediaMetadata.extras!!.getLong("size")
-        contentType = mediaItem.mediaMetadata.extras!!.getString("contentType")
-        suffix = mediaItem.mediaMetadata.extras!!.getString("suffix")
-        transcodedContentType = mediaItem.mediaMetadata.extras!!.getString("transcodedContentType")
-        transcodedSuffix = mediaItem.mediaMetadata.extras!!.getString("transcodedSuffix")
-        duration = mediaItem.mediaMetadata.extras!!.getInt("duration")
-        bitrate = mediaItem.mediaMetadata.extras!!.getInt("bitrate")
-        path = mediaItem.mediaMetadata.extras!!.getString("path")
-        isVideo = mediaItem.mediaMetadata.extras!!.getBoolean("isVideo")
-        userRating = mediaItem.mediaMetadata.extras!!.getInt("userRating")
-        averageRating = mediaItem.mediaMetadata.extras!!.getDouble("averageRating")
-        playCount = mediaItem.mediaMetadata.extras!!.getLong("playCount")
-        discNumber = mediaItem.mediaMetadata.extras!!.getInt("discNumber")
-        created = Date(mediaItem.mediaMetadata.extras!!.getLong("created"))
-        starred = Date(mediaItem.mediaMetadata.extras!!.getLong("starred"))
-        albumId = mediaItem.mediaMetadata.extras!!.getString("albumId")
-        artistId = mediaItem.mediaMetadata.extras!!.getString("artistId")
-        type = mediaItem.mediaMetadata.extras!!.getString("type")
-        bookmarkPosition = mediaItem.mediaMetadata.extras!!.getLong("bookmarkPosition")
-        originalWidth = mediaItem.mediaMetadata.extras!!.getInt("originalWidth")
-        originalHeight = mediaItem.mediaMetadata.extras!!.getInt("originalHeight")
+    constructor(mediaItem: MediaItem) : this(mediaItem.mediaMetadata.extras!!.getString(Constants.MEDIA_EXTRA_ID)!!) {
+        parentId = mediaItem.mediaMetadata.extras!!.getString(Constants.MEDIA_EXTRA_PARENT_ID)
+        isDir = mediaItem.mediaMetadata.extras!!.getBoolean(Constants.MEDIA_EXTRA_IS_DIR)
+        title = mediaItem.mediaMetadata.extras!!.getString(Constants.MEDIA_EXTRA_TITLE)
+        album = mediaItem.mediaMetadata.extras!!.getString(Constants.MEDIA_EXTRA_ALBUM)
+        artist = mediaItem.mediaMetadata.extras!!.getString(Constants.MEDIA_EXTRA_ARTIST)
+        track = mediaItem.mediaMetadata.extras!!.getInt(Constants.MEDIA_EXTRA_TRACK)
+        year = mediaItem.mediaMetadata.extras!!.getInt(Constants.MEDIA_EXTRA_YEAR)
+        genre = mediaItem.mediaMetadata.extras!!.getString(Constants.MEDIA_EXTRA_GENRE)
+        coverArtId = mediaItem.mediaMetadata.extras!!.getString(Constants.MEDIA_EXTRA_COVER_ART_ID)
+        size = mediaItem.mediaMetadata.extras!!.getLong(Constants.MEDIA_EXTRA_SIZE)
+        contentType = mediaItem.mediaMetadata.extras!!.getString(Constants.MEDIA_EXTRA_CONTENT_TYPE)
+        suffix = mediaItem.mediaMetadata.extras!!.getString(Constants.MEDIA_EXTRA_SUFFIX)
+        transcodedContentType = mediaItem.mediaMetadata.extras!!.getString(Constants.MEDIA_EXTRA_TRANSCODED_CONTENT_TYPE)
+        transcodedSuffix = mediaItem.mediaMetadata.extras!!.getString(Constants.MEDIA_EXTRA_TRANSCODED_SUFFIX)
+        duration = mediaItem.mediaMetadata.extras!!.getInt(Constants.MEDIA_EXTRA_DURATION)
+        bitrate = mediaItem.mediaMetadata.extras!!.getInt(Constants.MEDIA_EXTRA_BITRATE)
+        path = mediaItem.mediaMetadata.extras!!.getString(Constants.MEDIA_EXTRA_PATH)
+        isVideo = mediaItem.mediaMetadata.extras!!.getBoolean(Constants.MEDIA_EXTRA_IS_VIDEO)
+        userRating = mediaItem.mediaMetadata.extras!!.getInt(Constants.MEDIA_EXTRA_USER_RATING)
+        averageRating = mediaItem.mediaMetadata.extras!!.getDouble(Constants.MEDIA_EXTRA_AVERAGE_RATING)
+        playCount = mediaItem.mediaMetadata.extras!!.getLong(Constants.MEDIA_EXTRA_PLAY_COUNT)
+        discNumber = mediaItem.mediaMetadata.extras!!.getInt(Constants.MEDIA_EXTRA_DISC_NUMBER)
+        created = Date(mediaItem.mediaMetadata.extras!!.getLong(Constants.MEDIA_EXTRA_CREATED))
+        starred = Date(mediaItem.mediaMetadata.extras!!.getLong(Constants.MEDIA_EXTRA_STARRED))
+        albumId = mediaItem.mediaMetadata.extras!!.getString(Constants.MEDIA_EXTRA_ALBUM_ID)
+        artistId = mediaItem.mediaMetadata.extras!!.getString(Constants.MEDIA_EXTRA_ARTIST_ID)
+        type = mediaItem.mediaMetadata.extras!!.getString(Constants.MEDIA_EXTRA_TYPE)
+        bookmarkPosition = mediaItem.mediaMetadata.extras!!.getLong(Constants.MEDIA_EXTRA_BOOKMARK_POSITION)
+        originalWidth = mediaItem.mediaMetadata.extras!!.getInt(Constants.MEDIA_EXTRA_ORIGINAL_WIDTH)
+        originalHeight = mediaItem.mediaMetadata.extras!!.getInt(Constants.MEDIA_EXTRA_ORIGINAL_HEIGHT)
         server = Preferences.getServerId()
         timestamp = Date().time
     }

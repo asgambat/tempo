@@ -1,5 +1,7 @@
 package com.cappielloantonio.tempo.service;
 
+import android.util.Log;
+
 import androidx.annotation.OptIn;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
@@ -14,8 +16,11 @@ import com.cappielloantonio.tempo.repository.SongRepository;
 import com.cappielloantonio.tempo.subsonic.models.Child;
 import com.cappielloantonio.tempo.subsonic.models.InternetRadioStation;
 import com.cappielloantonio.tempo.subsonic.models.PodcastEpisode;
+import com.cappielloantonio.tempo.util.Constants;
+import com.cappielloantonio.tempo.util.DownloadUtil;
 import com.cappielloantonio.tempo.util.MappingUtil;
 import com.cappielloantonio.tempo.util.Preferences;
+import com.cappielloantonio.tempo.util.QueueMapping;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 
@@ -345,8 +350,8 @@ public class MediaManager {
         // Anche i brani scaricati portano gli extras: senza server non c'è un client Subsonic
         if (server == null || server.isEmpty()) return;
 
-        if (mediaItem != null && mediaItem.mediaMetadata != null && mediaItem.mediaMetadata.extras != null && mediaItem.mediaMetadata.extras.getString("id") != null && Preferences.isScrobblingEnabled()) {
-            getSongRepository().scrobble(mediaItem.mediaMetadata.extras.getString("id"), submission);
+        if (mediaItem != null && mediaItem.mediaMetadata != null && mediaItem.mediaMetadata.extras != null && mediaItem.mediaMetadata.extras.getString(Constants.MEDIA_EXTRA_ID) != null && Preferences.isScrobblingEnabled()) {
+            getSongRepository().scrobble(mediaItem.mediaMetadata.extras.getString(Constants.MEDIA_EXTRA_ID), submission);
         }
     }
 
@@ -362,10 +367,42 @@ public class MediaManager {
         }
     }
 
+    /**
+     * Scalda la cache delle copertine al cambio brano: l'artwork del brano corrente condivide la
+     * richiesta della sessione, quello del brano successivo parte al termine (v.
+     * {@link DownloadUtil#prefetchArtwork(MediaItem, MediaItem)}).
+     */
+    public static void prefetchArtwork(Player player, MediaItem mediaItem) {
+        if (player == null || mediaItem == null) return;
+
+        int nextIndex = player.getCurrentMediaItemIndex() + 1;
+        MediaItem nextMediaItem = nextIndex < player.getMediaItemCount()
+                ? player.getMediaItemAt(nextIndex)
+                : null;
+
+        DownloadUtil.prefetchArtwork(mediaItem, nextMediaItem);
+    }
+
     public static void saveChronology(MediaItem mediaItem) {
         if (mediaItem != null) {
             getChronologyRepository().insert(new Chronology(mediaItem));
         }
+    }
+
+    /**
+     * Allinea la coda salvata a quella impostata direttamente sul player da un controller esterno
+     * (Android Auto): quei controller non passano da {@link #startQueue}, quindi senza questo
+     * passaggio la coda del telefono resterebbe quella del brano precedente.
+     */
+    public static void syncQueue(List<MediaItem> mediaItems) {
+        List<Child> media = QueueMapping.fromMediaItems(mediaItems);
+
+        if (media.isEmpty()) {
+            Log.w(TAG, "No music items in the controller queue, keeping the stored one");
+            return;
+        }
+
+        getQueueRepository().replaceAll(media);
     }
 
     private static QueueRepository getQueueRepository() {

@@ -54,6 +54,12 @@ object Constants {
     const val PODCAST_FILTER_BY_DOWNLOAD = "PODCAST_FILTER_BY_DOWNLOAD"
     const val PODCAST_FILTER_BY_ALL = "PODCAST_FILTER_BY_ALL"
 
+    const val DIRECTORY_ORDER_BY_NAME = "DIRECTORY_ORDER_BY_NAME"
+    const val DIRECTORY_ORDER_BY_NAME_DESC = "DIRECTORY_ORDER_BY_NAME_DESC"
+    const val DIRECTORY_ORDER_BY_RECENTLY_ADDED = "DIRECTORY_ORDER_BY_RECENTLY_ADDED"
+    const val DIRECTORY_ORDER_BY_LEAST_RECENTLY_ADDED = "DIRECTORY_ORDER_BY_LEAST_RECENTLY_ADDED"
+    const val DIRECTORY_ORDER_BY_MOST_PLAYED = "DIRECTORY_ORDER_BY_MOST_PLAYED"
+
     const val MEDIA_TYPE_MUSIC = "music"
     const val MEDIA_TYPE_PODCAST = "podcast"
     const val MEDIA_TYPE_AUDIOBOOK = "audiobook"
@@ -102,6 +108,47 @@ object Constants {
     const val PRE_PLAYABLE_MEDIA = 15
     const val DIRECTORY_SUBFOLDERS_MAX_DEPTH = 3
     const val DIRECTORY_SUBFOLDERS_MAX_REQUESTS = 100
+
+    // Risoluzione dell'artwork inviato alla sessione (Android Auto e notifica): una misura
+    // dedicata evita di scaricare l'originale del server a ogni cambio brano.
+    const val SESSION_ARTWORK_SIZE = 500
+
+    // Chiavi degli extras dei MediaItem (Bundle): le scrivono MappingUtil.buildMusicExtras e
+    // SessionMediaItem, le leggono QueueMapping, Chronology, MediaManager e la UI del player.
+    // Un unico posto evita che un rename lasci in silenzio metà del codice su chiavi diverse.
+    const val MEDIA_EXTRA_ID = "id"
+    const val MEDIA_EXTRA_PARENT_ID = "parentId"
+    const val MEDIA_EXTRA_IS_DIR = "isDir"
+    const val MEDIA_EXTRA_TITLE = "title"
+    const val MEDIA_EXTRA_ALBUM = "album"
+    const val MEDIA_EXTRA_ARTIST = "artist"
+    const val MEDIA_EXTRA_TRACK = "track"
+    const val MEDIA_EXTRA_YEAR = "year"
+    const val MEDIA_EXTRA_GENRE = "genre"
+    const val MEDIA_EXTRA_COVER_ART_ID = "coverArtId"
+    const val MEDIA_EXTRA_SIZE = "size"
+    const val MEDIA_EXTRA_CONTENT_TYPE = "contentType"
+    const val MEDIA_EXTRA_SUFFIX = "suffix"
+    const val MEDIA_EXTRA_TRANSCODED_CONTENT_TYPE = "transcodedContentType"
+    const val MEDIA_EXTRA_TRANSCODED_SUFFIX = "transcodedSuffix"
+    const val MEDIA_EXTRA_DURATION = "duration"
+    const val MEDIA_EXTRA_BITRATE = "bitrate"
+    const val MEDIA_EXTRA_PATH = "path"
+    const val MEDIA_EXTRA_IS_VIDEO = "isVideo"
+    const val MEDIA_EXTRA_USER_RATING = "userRating"
+    const val MEDIA_EXTRA_AVERAGE_RATING = "averageRating"
+    const val MEDIA_EXTRA_PLAY_COUNT = "playCount"
+    const val MEDIA_EXTRA_DISC_NUMBER = "discNumber"
+    const val MEDIA_EXTRA_CREATED = "created"
+    const val MEDIA_EXTRA_STARRED = "starred"
+    const val MEDIA_EXTRA_ALBUM_ID = "albumId"
+    const val MEDIA_EXTRA_ARTIST_ID = "artistId"
+    const val MEDIA_EXTRA_TYPE = "type"
+    const val MEDIA_EXTRA_BOOKMARK_POSITION = "bookmarkPosition"
+    const val MEDIA_EXTRA_ORIGINAL_WIDTH = "originalWidth"
+    const val MEDIA_EXTRA_ORIGINAL_HEIGHT = "originalHeight"
+    const val MEDIA_EXTRA_URI = "uri"
+    const val MEDIA_EXTRA_DESCRIPTION = "description"
 
     const val HOME_SECTOR_FAVORITE_FOLDER = "HOME_SECTOR_FAVORITE_FOLDER"
     const val HOME_SECTOR_DISCOVERY = "HOME_SECTOR_DISCOVERY"

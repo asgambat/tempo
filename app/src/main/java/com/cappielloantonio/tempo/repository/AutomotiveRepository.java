@@ -2,6 +2,7 @@ package com.cappielloantonio.tempo.repository;
 
 
 import android.net.Uri;
+import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
@@ -40,6 +41,8 @@ import com.cappielloantonio.tempo.subsonic.models.InternetRadioStation;
 import com.cappielloantonio.tempo.subsonic.models.MusicFolder;
 import com.cappielloantonio.tempo.subsonic.models.Playlist;
 import com.cappielloantonio.tempo.subsonic.models.PodcastEpisode;
+import com.cappielloantonio.tempo.util.Constants;
+import com.cappielloantonio.tempo.util.DirectorySortUtil;
 import com.cappielloantonio.tempo.util.DownloadUtil;
 import com.cappielloantonio.tempo.util.MappingUtil;
 import com.cappielloantonio.tempo.util.MusicUtil;
@@ -53,7 +56,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -63,12 +65,45 @@ public class AutomotiveRepository {
     private static final String TAG = "AutomotiveRepository";
 
     private static final long METADATA_TTL_MS = 24 * 60 * 60 * 1000L;
+
+    // Content style hint (stessi valori di androidx.media.utils.MediaConstants): nel ramo Cartelle
+    // si forza la lista, così l'host di Android Auto non passa alla griglia, che non ha l'indice A-Z
+    // nella barra di scorrimento.
+    private static final String CONTENT_STYLE_BROWSABLE_HINT = "android.media.browse.CONTENT_STYLE_BROWSABLE_HINT";
+    private static final String CONTENT_STYLE_PLAYABLE_HINT = "android.media.browse.CONTENT_STYLE_PLAYABLE_HINT";
+    private static final int CONTENT_STYLE_LIST_ITEM = 1;
     private static final int SESSION_METADATA_CHUNK = 500;
 
+    private final DirectoryRepository directoryRepository = new DirectoryRepository();
     private final SessionMediaItemDao sessionMediaItemDao = AppDatabase.getInstance().sessionMediaItemDao();
     private final ChronologyDao chronologyDao = AppDatabase.getInstance().chronologyDao();
     private final DownloadDao downloadDao = AppDatabase.getInstance().downloadDao();
     private final QueueDao queueDao = AppDatabase.getInstance().queueDao();
+
+    private static Bundle folderListStyle() {
+        Bundle extras = new Bundle();
+        extras.putInt(CONTENT_STYLE_BROWSABLE_HINT, CONTENT_STYLE_LIST_ITEM);
+        extras.putInt(CONTENT_STYLE_PLAYABLE_HINT, CONTENT_STYLE_LIST_ITEM);
+
+        return extras;
+    }
+
+    /**
+     * Aggiunge gli hint lista/griglia agli extras di un brano mappato da MappingUtil, senza
+     * perdere gli extras musicali (id, type, albumId...): l'host di Android Auto sceglie il layout
+     * dagli hint, MediaService usa gli altri campi per scrobble e chronology.
+     */
+    private static MediaItem withFolderListStyle(MediaItem item) {
+        MediaMetadata metadata = item.mediaMetadata;
+        Bundle extras = metadata.extras != null ? new Bundle(metadata.extras) : new Bundle();
+
+        extras.putInt(CONTENT_STYLE_BROWSABLE_HINT, CONTENT_STYLE_LIST_ITEM);
+        extras.putInt(CONTENT_STYLE_PLAYABLE_HINT, CONTENT_STYLE_LIST_ITEM);
+
+        return item.buildUpon()
+                .setMediaMetadata(metadata.buildUpon().setExtras(extras).build())
+                .build();
+    }
 
     private static <T> void completeError(SettableFuture<LibraryResult<T>> future, int errorCode) {
         future.set(LibraryResult.ofError(errorCode));
@@ -171,7 +206,7 @@ public class AutomotiveRepository {
 
         App.getSubsonicClientInstance(false)
                 .getAlbumSongListClient()
-                .getRandomSongs(100, null, null)
+                .getRandomSongs(count, null, null)
                 .enqueue(new Callback<ApiResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
@@ -359,6 +394,7 @@ public class AutomotiveRepository {
                                         .setIsBrowsable(true)
                                         .setIsPlayable(false)
                                         .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
+                                        .setExtras(folderListStyle())
                                         .build();
 
                                 MediaItem mediaItem = new MediaItem.Builder()
@@ -410,6 +446,7 @@ public class AutomotiveRepository {
                                                     .setIsBrowsable(true)
                                                     .setIsPlayable(false)
                                                     .setMediaType(MediaMetadata.MEDIA_TYPE_ARTIST)
+                                                    .setExtras(folderListStyle())
                                                     .build();
 
                                             MediaItem mediaItem = new MediaItem.Builder()
@@ -425,7 +462,7 @@ public class AutomotiveRepository {
                             }
 
                             if (response.body().getSubsonicResponse().getIndexes().getChildren() != null) {
-                                List<Child> children = response.body().getSubsonicResponse().getIndexes().getChildren();
+                                List<Child> children = DirectorySortUtil.sort(response.body().getSubsonicResponse().getIndexes().getChildren(), Preferences.getDirectorySortOrder());
                                 List<Child> songs = new ArrayList<>();
 
                                 for (Child child : children) {
@@ -436,6 +473,7 @@ public class AutomotiveRepository {
                                                 .setIsPlayable(false)
                                                 .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
                                                 .setArtworkUri(MappingUtil.getPublicArtworkUri(child.getCoverArtId(), child.getAlbumId()))
+                                                .setExtras(folderListStyle())
                                                 .build();
 
                                         mediaItems.add(new MediaItem.Builder()
@@ -449,8 +487,12 @@ public class AutomotiveRepository {
                                 }
 
                                 // Come in getDirectories: i brani passano da MappingUtil, così hanno
-                                // extras e mediaId reale (il lookup dei metadati usa l'id Subsonic)
-                                mediaItems.addAll(MappingUtil.mapMediaItems(songs, true));
+                                // extras e mediaId reale (il lookup dei metadati usa l'id Subsonic),
+                                // e portano lo stesso hint di lista delle cartelle.
+                                for (MediaItem song : MappingUtil.mapMediaItems(songs, true)) {
+                                    mediaItems.add(withFolderListStyle(song));
+                                }
+
                                 setChildrenMetadata(songs);
                             }
 
@@ -483,29 +525,43 @@ public class AutomotiveRepository {
                         if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null && response.body().getSubsonicResponse().getDirectory() != null && response.body().getSubsonicResponse().getDirectory().getChildren() != null) {
                             Directory directory = response.body().getSubsonicResponse().getDirectory();
 
+                            List<Child> children = DirectorySortUtil.sort(directory.getChildren(), Preferences.getDirectorySortOrder());
                             List<MediaItem> mediaItems = new ArrayList<>();
+                            List<Child> songs = new ArrayList<>();
 
-                            for (Child child : directory.getChildren()) {
+                            for (Child child : children) {
+                                if (!child.isDir()) {
+                                    songs.add(child);
+                                    continue;
+                                }
+
                                 Uri artworkUri = MappingUtil.getPublicArtworkUri(child.getCoverArtId(), child.getAlbumId());
 
                                 MediaMetadata mediaMetadata = new MediaMetadata.Builder()
                                         .setTitle(child.getTitle())
-                                        .setIsBrowsable(child.isDir())
-                                        .setIsPlayable(!child.isDir())
-                                        .setMediaType(child.isDir() ? MediaMetadata.MEDIA_TYPE_FOLDER_MIXED : MediaMetadata.MEDIA_TYPE_MUSIC)
+                                        .setIsBrowsable(true)
+                                        .setIsPlayable(false)
+                                        .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
                                         .setArtworkUri(artworkUri)
+                                        .setExtras(folderListStyle())
                                         .build();
 
                                 MediaItem mediaItem = new MediaItem.Builder()
-                                        .setMediaId(child.isDir() ? prefix + child.getId() : child.getId())
+                                        .setMediaId(prefix + child.getId())
                                         .setMediaMetadata(mediaMetadata)
-                                        .setUri(!child.isDir() ? MusicUtil.getStreamUri(child.getId()) : Uri.parse(""))
+                                        .setUri("")
                                         .build();
 
                                 mediaItems.add(mediaItem);
                             }
 
-                            setChildrenMetadata(directory.getChildren().stream().filter(child -> !child.isDir()).collect(Collectors.toList()));
+                            // I brani passano da MappingUtil come nelle altre liste: extras (scrobble,
+                            // chronology) e, se il brano è scaricato, l'URI locale invece dello stream.
+                            for (MediaItem song : MappingUtil.mapMediaItems(songs, true)) {
+                                mediaItems.add(withFolderListStyle(song));
+                            }
+
+                            setChildrenMetadata(songs);
 
                             LibraryResult<ImmutableList<MediaItem>> libraryResult = LibraryResult.ofItemList(ImmutableList.copyOf(mediaItems), null);
 
@@ -771,6 +827,35 @@ public class AutomotiveRepository {
                 .setMediaMetadata(mediaMetadata)
                 .setUri("")
                 .build();
+    }
+
+    /**
+     * Brani della cartella e delle sottocartelle, nello stesso ordine del telefono (prima la
+     * cartella, poi le sottocartelle in ordine alfabetico). Con {@code shuffle} la lista esce
+     * mescolata, così il comando shuffle di Android Auto accoda tutto in ordine casuale.
+     * Tetti e profondità sono quelli di
+     * {@link DirectoryRepository#getSongsIncludingSubfolders}: 100 brani, 3 livelli.
+     */
+    public ListenableFuture<List<MediaItem>> getFolderSongs(String directoryId, boolean shuffle) {
+        final SettableFuture<List<MediaItem>> listenableFuture = SettableFuture.create();
+
+        directoryRepository.getSongsIncludingSubfolders(directoryId, Constants.DIRECTORY_SUBFOLDERS_MAX_DEPTH, songs -> {
+            List<Child> tracks = new ArrayList<>(songs);
+
+            if (shuffle) {
+                Collections.shuffle(tracks);
+            }
+
+            if (tracks.isEmpty()) {
+                Log.w(TAG, "No songs in the folder " + directoryId + ", nothing to queue");
+                listenableFuture.set(Collections.emptyList());
+                return;
+            }
+
+            listenableFuture.set(MappingUtil.mapMediaItems(tracks, true));
+        });
+
+        return listenableFuture;
     }
 
     public ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> getAlbumTracks(String id) {

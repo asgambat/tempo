@@ -43,6 +43,7 @@ object Preferences {
     private const val PODCAST_SECTION_VISIBILITY = "podcast_section_visibility"
     private const val RADIO_SECTION_VISIBILITY = "radio_section_visibility"
     private const val MUSIC_DIRECTORY_SECTION_VISIBILITY = "music_directory_section_visibility"
+    private const val DIRECTORY_SORT_ORDER = "directory_sort_order"
     private const val REPLAY_GAIN_MODE = "replay_gain_mode"
     private const val AUDIO_TRANSCODE_PRIORITY = "audio_transcode_priority"
     private const val STREAMING_CACHE_STORAGE = "streaming_cache_storage"
@@ -355,6 +356,16 @@ object Preferences {
     @JvmStatic
     fun isMusicDirectorySectionVisible(): Boolean {
         return App.getInstance().preferences.getBoolean(MUSIC_DIRECTORY_SECTION_VISIBILITY, true)
+    }
+
+    @JvmStatic
+    fun getDirectorySortOrder(): String {
+        return App.getInstance().preferences.getString(DIRECTORY_SORT_ORDER, Constants.DIRECTORY_ORDER_BY_NAME) ?: Constants.DIRECTORY_ORDER_BY_NAME
+    }
+
+    @JvmStatic
+    fun setDirectorySortOrder(order: String?) {
+        App.getInstance().preferences.edit().putString(DIRECTORY_SORT_ORDER, order ?: Constants.DIRECTORY_ORDER_BY_NAME).apply()
     }
 
     @JvmStatic

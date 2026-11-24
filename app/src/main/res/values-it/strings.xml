@@ -66,6 +66,7 @@
 	<string name="disc_titleless">Disco %1$s</string>
 	<string name="directory_page_no_playable_songs">Nessun brano riproducibile in questa cartella</string>
 	<string name="directory_page_play_with_subfolders_button">Riproduci con le sottocartelle</string>
+	<string name="directory_page_sort_button">Ordina cartelle</string>
 	<string name="download_directory_dialog_negative_button">Annulla</string>
 	<string name="download_directory_dialog_positive_button">Scarica</string>
 	<string name="download_directory_dialog_summary">Tutti i brani in questa cartella verranno scaricati. I brani nelle sottocartelle non verranno scaricati.</string>
@@ -181,8 +182,10 @@
 	<string name="menu_settings_button">Impostazioni</string>
 	<string name="menu_sort_artist">Artista</string>
 	<string name="menu_sort_name">Nome</string>
+	<string name="menu_sort_name_desc">Nome (Z-A)</string>
 	<string name="menu_sort_random">Casuale</string>
 	<string name="menu_sort_recently_added">Aggiunti di recente</string>
+	<string name="menu_sort_least_recently_added">Aggiunti meno di recente</string>
 	<string name="menu_pin_button">Aggiungi alla schermata home</string>
 	<string name="menu_unpin_button">Rimuovi dalla schermata home</string>
 	<string name="menu_sort_year">Anno</string>
@@ -299,7 +302,7 @@
 	<string name="settings_max_bitrate_mobile">Bitrate su mobile</string>
 	<string name="settings_max_bitrate_wifi">Bitrate su Wi-Fi</string>
 	<string name="settings_media_cache">Dimensione della cache dei file multimediali</string>
-	<string name="settings_music_directory">Mostra directory musicali</string>
+		<string name="settings_music_directory">Mostra directory musicali</string>
 	<string name="settings_music_directory_summary">Se abilitato, mostra la sezione delle directory musicali. Nota che per la navigazione nelle cartelle è necessario che il server supporti questa funzionalità.</string>
 	<string name="settings_podcast">Mostra podcast</string>
 	<string name="settings_podcast_summary">Se abilitato, mostra la sezione podcast. Riavvia l\'app per rendere effettive le modifiche.</string>
@@ -435,5 +438,9 @@
     <string name="auto_playlists">Playlist</string>
     <string name="auto_podcasts">Podcast</string>
     <string name="auto_radio_stations">Stazioni radio</string>
+    <string name="auto_play_all">Riproduci tutto</string>
+    <string name="auto_shuffle_all">Riproduci casuale</string>
     <string name="auto_no_downloads">Nessun brano scaricato</string>
+    <string name="alphabet_index_label">A–Z</string>
+    <string name="alphabet_index_content_description">Vai a una lettera</string>
 </resources>

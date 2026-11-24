@@ -12,8 +12,9 @@ import com.cappielloantonio.tempo.subsonic.models.Directory;
 import com.cappielloantonio.tempo.subsonic.models.Indexes;
 import com.cappielloantonio.tempo.subsonic.models.MusicFolder;
 import com.cappielloantonio.tempo.util.Constants;
+import com.cappielloantonio.tempo.util.DirectorySortUtil;
+import com.cappielloantonio.tempo.util.Preferences;
 
-import java.text.Collator;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -102,6 +103,60 @@ public class DirectoryRepository {
      */
     public SongsRequest getSongsIncludingSubfolders(Directory directory, int maxDepth, SongsCallback callback) {
         SongsRequest request = new SongsRequest();
+
+        collectFromDirectory(request, directory, maxDepth, callback);
+
+        return request;
+    }
+
+    /**
+     * Come {@link #getSongsIncludingSubfolders(Directory, int, SongsCallback)} ma a partire
+     * dall'id della cartella: la directory viene letta prima, così Android Auto (che conosce solo
+     * l'id della cartella in riproduzione) riusa la stessa raccolta. Una directory non leggibile
+     * produce una lista vuota.
+     */
+    public SongsRequest getSongsIncludingSubfolders(String directoryId, int maxDepth, SongsCallback callback) {
+        SongsRequest request = new SongsRequest();
+
+        App.getSubsonicClientInstance(false)
+                .getBrowsingClient()
+                .getMusicDirectory(directoryId)
+                .enqueue(new Callback<ApiResponse>() {
+                    @Override
+                    public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
+                        if (request.isCancelled()) {
+                            return;
+                        }
+
+                        Directory directory = null;
+
+                        if (response.isSuccessful() && response.body() != null && response.body().getSubsonicResponse() != null) {
+                            directory = response.body().getSubsonicResponse().getDirectory();
+                        }
+
+                        if (directory == null) {
+                            Log.w(TAG, "Unable to read the directory " + directoryId);
+                            callback.onSongs(new ArrayList<>());
+                            return;
+                        }
+
+                        collectFromDirectory(request, directory, maxDepth, callback);
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
+                        Log.e(TAG, "Unable to load the directory " + directoryId, t);
+
+                        if (!request.isCancelled()) {
+                            callback.onSongs(new ArrayList<>());
+                        }
+                    }
+                });
+
+        return request;
+    }
+
+    private void collectFromDirectory(SongsRequest request, Directory directory, int maxDepth, SongsCallback callback) {
         List<Child> songs = new ArrayList<>();
         Deque<DirectoryNode> pendingDirectories = new ArrayDeque<>();
 
@@ -111,8 +166,6 @@ public class DirectoryRepository {
         }
 
         collectSubfolderSongs(request, pendingDirectories, maxDepth, songs, 0, callback);
-
-        return request;
     }
 
     private void collectSubfolderSongs(SongsRequest request, Deque<DirectoryNode> pendingDirectories, int maxDepth, List<Child> songs, int requests, SongsCallback callback) {
@@ -181,16 +234,7 @@ public class DirectoryRepository {
             }
         }
 
-        Collator collator = Collator.getInstance();
-        collator.setStrength(Collator.PRIMARY);
-
-        Collections.sort(subDirectories, (first, second) -> collator.compare(getDirectoryName(first), getDirectoryName(second)));
-
-        return subDirectories;
-    }
-
-    private static String getDirectoryName(Child directory) {
-        return directory.getTitle() != null ? directory.getTitle() : "";
+        return DirectorySortUtil.sort(subDirectories, Preferences.getDirectorySortOrder());
     }
 
     private void addSongs(List<Child> children, List<Child> songs) {

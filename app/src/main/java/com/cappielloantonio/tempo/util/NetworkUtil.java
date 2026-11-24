@@ -26,4 +26,26 @@ public class NetworkUtil {
 
         return true;
     }
+
+    /**
+     * Rete a consumo (dati mobili, hotspot a consumo). Con rete sconosciuta risponde false: non
+     * si blocca nulla per un'informazione mancante.
+     */
+    public static boolean isMetered() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) App.getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        if (connectivityManager != null) {
+            Network network = connectivityManager.getActiveNetwork();
+
+            if (network != null) {
+                NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(network);
+
+                if (capabilities != null) {
+                    return !capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED);
+                }
+            }
+        }
+
+        return false;
+    }
 }

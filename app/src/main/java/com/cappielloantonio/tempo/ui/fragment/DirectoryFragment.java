@@ -8,6 +8,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.PopupMenu;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -21,6 +22,7 @@ import androidx.media3.session.MediaBrowser;
 import androidx.media3.session.SessionToken;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.cappielloantonio.tempo.R;
 import com.cappielloantonio.tempo.databinding.FragmentDirectoryBinding;
@@ -36,8 +38,10 @@ import com.cappielloantonio.tempo.ui.activity.MainActivity;
 import com.cappielloantonio.tempo.ui.adapter.MusicDirectoryAdapter;
 import com.cappielloantonio.tempo.ui.dialog.DownloadDirectoryDialog;
 import com.cappielloantonio.tempo.util.Constants;
+import com.cappielloantonio.tempo.util.DirectorySortUtil;
 import com.cappielloantonio.tempo.util.DownloadUtil;
 import com.cappielloantonio.tempo.util.MappingUtil;
+import com.cappielloantonio.tempo.util.Preferences;
 import com.cappielloantonio.tempo.viewmodel.DirectoryViewModel;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -62,6 +66,8 @@ public class DirectoryFragment extends Fragment implements ClickCallback {
 
     private MenuItem menuItem;
 
+    private String currentSort = Constants.DIRECTORY_ORDER_BY_NAME;
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -83,9 +89,11 @@ public class DirectoryFragment extends Fragment implements ClickCallback {
         bind = FragmentDirectoryBinding.inflate(inflater, container, false);
         View view = bind.getRoot();
         directoryViewModel = new ViewModelProvider(requireActivity()).get(DirectoryViewModel.class);
+        currentSort = Preferences.getDirectorySortOrder();
 
         initAppBar();
         initSubfoldersPlayButton();
+        initSortButton();
         initDirectoryListView();
 
         return view;
@@ -101,6 +109,26 @@ public class DirectoryFragment extends Fragment implements ClickCallback {
     public void onStop() {
         releaseMediaBrowser();
         super.onStop();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        // L'ordinamento può essere cambiato altrove (impostazioni, un'altra directory): si
+        // riallinea la lista già aperta invece di aspettare la prossima navigazione.
+        if (bind == null || directory == null) return;
+
+        String preferredSort = Preferences.getDirectorySortOrder();
+
+        if (preferredSort.equals(currentSort)) return;
+
+        currentSort = preferredSort;
+
+        List<Child> children = DirectorySortUtil.sort(directory.getChildren(), currentSort);
+
+        musicDirectoryAdapter.setItems(children);
+        updateAlphabetIndex(children);
     }
 
     @Override
@@ -165,6 +193,9 @@ public class DirectoryFragment extends Fragment implements ClickCallback {
 
         musicDirectoryAdapter = new MusicDirectoryAdapter(this);
         bind.directoryRecyclerView.setAdapter(musicDirectoryAdapter);
+
+        bind.directoryAlphabetIndexBar.setOnPositionSelectedListener(this::scrollToPosition);
+        bind.directoryAlphabetIndexBar.watchScroll(bind.directoryRecyclerView);
         directoryViewModel.loadMusicDirectory(getArguments().getString(Constants.MUSIC_DIRECTORY_ID)).observe(getViewLifecycleOwner(), directory -> {
             if (directory == null) {
                 return;
@@ -177,7 +208,10 @@ public class DirectoryFragment extends Fragment implements ClickCallback {
             bind.directorySubfoldersPlayButton.setVisibility(hasSubDirectories(directory) ? View.VISIBLE : View.GONE);
             bind.directorySubfoldersPlayButton.setEnabled(true);
 
-            musicDirectoryAdapter.setItems(directory.getChildren());
+            List<Child> children = DirectorySortUtil.sort(directory.getChildren(), currentSort);
+
+            musicDirectoryAdapter.setItems(children);
+            updateAlphabetIndex(children);
 
             if (menuItem != null) {
                 menuItem.setVisible(
@@ -189,6 +223,92 @@ public class DirectoryFragment extends Fragment implements ClickCallback {
                 );
             }
         });
+    }
+
+    private void scrollToPosition(int position) {
+        if (bind == null) return;
+
+        RecyclerView.LayoutManager layoutManager = bind.directoryRecyclerView.getLayoutManager();
+
+        if (layoutManager instanceof LinearLayoutManager) {
+            ((LinearLayoutManager) layoutManager).scrollToPositionWithOffset(position, 0);
+        }
+    }
+
+    private void initSortButton() {
+        bind.directorySortButton.setOnClickListener(view -> {
+            PopupMenu popup = new PopupMenu(requireContext(), view);
+            popup.getMenuInflater().inflate(R.menu.sort_directory_popup_menu, popup.getMenu());
+
+            MenuItem checkedItem = popup.getMenu().findItem(menuItemIdForSort(currentSort));
+
+            if (checkedItem != null) checkedItem.setChecked(true);
+
+            popup.setOnMenuItemClickListener(menuItem -> {
+                if (menuItem.getItemId() == R.id.menu_directory_sort_name) {
+                    sortBy(Constants.DIRECTORY_ORDER_BY_NAME);
+                    return true;
+                } else if (menuItem.getItemId() == R.id.menu_directory_sort_name_desc) {
+                    sortBy(Constants.DIRECTORY_ORDER_BY_NAME_DESC);
+                    return true;
+                } else if (menuItem.getItemId() == R.id.menu_directory_sort_recently_added) {
+                    sortBy(Constants.DIRECTORY_ORDER_BY_RECENTLY_ADDED);
+                    return true;
+                } else if (menuItem.getItemId() == R.id.menu_directory_sort_least_recently_added) {
+                    sortBy(Constants.DIRECTORY_ORDER_BY_LEAST_RECENTLY_ADDED);
+                    return true;
+                } else if (menuItem.getItemId() == R.id.menu_directory_sort_most_played) {
+                    sortBy(Constants.DIRECTORY_ORDER_BY_MOST_PLAYED);
+                    return true;
+                }
+
+                return false;
+            });
+
+            popup.show();
+        });
+    }
+
+    private int menuItemIdForSort(String order) {
+        switch (order) {
+            case Constants.DIRECTORY_ORDER_BY_NAME_DESC:
+                return R.id.menu_directory_sort_name_desc;
+            case Constants.DIRECTORY_ORDER_BY_RECENTLY_ADDED:
+                return R.id.menu_directory_sort_recently_added;
+            case Constants.DIRECTORY_ORDER_BY_LEAST_RECENTLY_ADDED:
+                return R.id.menu_directory_sort_least_recently_added;
+            case Constants.DIRECTORY_ORDER_BY_MOST_PLAYED:
+                return R.id.menu_directory_sort_most_played;
+            default:
+                return R.id.menu_directory_sort_name;
+        }
+    }
+
+    private void sortBy(String order) {
+        currentSort = order;
+        Preferences.setDirectorySortOrder(order);
+
+        if (bind == null || directory == null) return;
+
+        List<Child> children = DirectorySortUtil.sort(directory.getChildren(), order);
+
+        musicDirectoryAdapter.setItems(children);
+        updateAlphabetIndex(children);
+    }
+
+    private void updateAlphabetIndex(List<Child> children) {
+        if (bind == null) return;
+
+        if (!DirectorySortUtil.isAlphabetical(currentSort)) {
+            bind.directoryAlphabetIndexBar.setTitles(null);
+            return;
+        }
+
+        bind.directoryAlphabetIndexBar.setTitles(
+                children != null
+                        ? children.stream().map(Child::getTitle).collect(Collectors.toList())
+                        : null
+        );
     }
 
     private void initSubfoldersPlayButton() {

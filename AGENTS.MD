@@ -96,6 +96,7 @@ Mappa dei package sotto `app/src/main/java/com/cappielloantonio/tempo/`:
 | `database/` | `AppDatabase.java` (Room v10), `dao/` (8 DAO), `converter/DateConverters.kt` | Java |
 | `model/` | entità Room + modelli locali (Queue, Server, Download, Chronology, Favorite, RecentSearch, SessionMediaItem, HomeSector, ReplayGain) | Kotlin |
 | `service/` | `MediaManager.java` (facade playback), `DownloaderManager.java`, `DownloaderService.java`, `MediaBrowserTree.kt` + `MediaLibraryServiceCallback.kt` (condivisi in `main`); `MediaService` è **per flavor** | Java + Kotlin |
+| `provider/` | `ArtworkProvider.java`: `ContentProvider` read-only delle copertine in cache, esposto ad Android Auto (`content://<applicationId>.artwork/<coverArtId>`) | Java |
 | `util/` | `Constants.kt`, `Preferences.kt`, `MusicUtil`, `DownloadUtil`, `MappingUtil`, `NetworkUtil`, `UIUtil`, `IndexUtil`, `ReplayGainUtil`, `StreamingCacheDataSource.kt`, `OpenSubsonicExtensionsUtil` | Java + Kotlin |
 | `interfaces/` | callback di click/diaolog usate da fragment e adapter (`ClickCallback`, `DialogClickCallback`, …) | Java |
 | `helper/` | `ThemeHelper.java`, helper RecyclerView (`helper/recyclerview/`) | Java + Kotlin |

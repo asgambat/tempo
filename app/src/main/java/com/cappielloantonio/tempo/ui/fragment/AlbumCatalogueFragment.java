@@ -23,26 +23,33 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.util.UnstableApi;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.cappielloantonio.tempo.R;
 import com.cappielloantonio.tempo.databinding.FragmentAlbumCatalogueBinding;
 import com.cappielloantonio.tempo.helper.recyclerview.GridItemDecoration;
 import com.cappielloantonio.tempo.interfaces.ClickCallback;
+import com.cappielloantonio.tempo.subsonic.models.AlbumID3;
 import com.cappielloantonio.tempo.ui.activity.MainActivity;
 import com.cappielloantonio.tempo.ui.adapter.AlbumCatalogueAdapter;
 import com.cappielloantonio.tempo.util.Constants;
 import com.cappielloantonio.tempo.viewmodel.AlbumCatalogueViewModel;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @OptIn(markerClass = UnstableApi.class)
 public class AlbumCatalogueFragment extends Fragment implements ClickCallback {
-    private static final String TAG = "ArtistCatalogueFragment";
+    private static final String TAG = "AlbumCatalogueFragment";
 
     private FragmentAlbumCatalogueBinding bind;
     private MainActivity activity;
     private AlbumCatalogueViewModel albumCatalogueViewModel;
 
     private AlbumCatalogueAdapter albumAdapter;
+
+    private String currentSort = Constants.ALBUM_ORDER_BY_NAME;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -114,7 +121,12 @@ public class AlbumCatalogueFragment extends Fragment implements ClickCallback {
 
         albumAdapter = new AlbumCatalogueAdapter(this, true);
         albumAdapter.setStateRestorationPolicy(RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY);
+        albumAdapter.setOnItemsChangedListener(this::updateAlphabetIndex);
         bind.albumCatalogueRecyclerView.setAdapter(albumAdapter);
+
+        bind.albumCatalogueAlphabetIndexBar.setOnPositionSelectedListener(this::scrollToPosition);
+        bind.albumCatalogueAlphabetIndexBar.watchScroll(bind.albumCatalogueRecyclerView);
+
         albumCatalogueViewModel.getAlbumList().observe(getViewLifecycleOwner(), albums -> albumAdapter.setItems(albums));
 
         bind.albumCatalogueRecyclerView.setOnTouchListener((v, event) -> {
@@ -173,25 +185,25 @@ public class AlbumCatalogueFragment extends Fragment implements ClickCallback {
 
         popup.setOnMenuItemClickListener(menuItem -> {
             if (menuItem.getItemId() == R.id.menu_album_sort_name) {
-                albumAdapter.sort(Constants.ALBUM_ORDER_BY_NAME);
+                sortBy(Constants.ALBUM_ORDER_BY_NAME);
                 return true;
             } else if (menuItem.getItemId() == R.id.menu_album_sort_artist) {
-                albumAdapter.sort(Constants.ALBUM_ORDER_BY_ARTIST);
+                sortBy(Constants.ALBUM_ORDER_BY_ARTIST);
                 return true;
             } else if (menuItem.getItemId() == R.id.menu_album_sort_year) {
-                albumAdapter.sort(Constants.ALBUM_ORDER_BY_YEAR);
+                sortBy(Constants.ALBUM_ORDER_BY_YEAR);
                 return true;
             } else if (menuItem.getItemId() == R.id.menu_album_sort_random) {
-                albumAdapter.sort(Constants.ALBUM_ORDER_BY_RANDOM);
+                sortBy(Constants.ALBUM_ORDER_BY_RANDOM);
                 return true;
             } else if (menuItem.getItemId() == R.id.menu_album_sort_recently_added) {
-                albumAdapter.sort(Constants.ALBUM_ORDER_BY_RECENTLY_ADDED);
+                sortBy(Constants.ALBUM_ORDER_BY_RECENTLY_ADDED);
                 return true;
             } else if (menuItem.getItemId() == R.id.menu_album_sort_recently_played) {
-                albumAdapter.sort(Constants.ALBUM_ORDER_BY_RECENTLY_PLAYED);
+                sortBy(Constants.ALBUM_ORDER_BY_RECENTLY_PLAYED);
                 return true;
             } else if (menuItem.getItemId() == R.id.menu_album_sort_most_played) {
-                albumAdapter.sort(Constants.ALBUM_ORDER_BY_MOST_PLAYED);
+                sortBy(Constants.ALBUM_ORDER_BY_MOST_PLAYED);
                 return true;
             }
 
@@ -199,6 +211,42 @@ public class AlbumCatalogueFragment extends Fragment implements ClickCallback {
         });
 
         popup.show();
+    }
+
+    // L'indice A-Z ha senso solo con l'ordine alfabetico: con un altro ordinamento una lettera
+    // porterebbe a righe che non iniziano con quella lettera.
+    private void sortBy(String order) {
+        currentSort = order;
+        albumAdapter.sort(order);
+        updateAlphabetIndex();
+    }
+
+    private void updateAlphabetIndex() {
+        if (bind == null) return;
+
+        if (!Constants.ALBUM_ORDER_BY_NAME.equals(currentSort)) {
+            bind.albumCatalogueAlphabetIndexBar.setTitles(null);
+            return;
+        }
+
+        List<String> titles = new ArrayList<>(albumAdapter.getItemCount());
+
+        for (int i = 0; i < albumAdapter.getItemCount(); i++) {
+            AlbumID3 album = albumAdapter.getItem(i);
+            titles.add(album != null ? album.getName() : null);
+        }
+
+        bind.albumCatalogueAlphabetIndexBar.setTitles(titles);
+    }
+
+    private void scrollToPosition(int position) {
+        if (bind == null) return;
+
+        RecyclerView.LayoutManager layoutManager = bind.albumCatalogueRecyclerView.getLayoutManager();
+
+        if (layoutManager instanceof LinearLayoutManager) {
+            ((LinearLayoutManager) layoutManager).scrollToPositionWithOffset(position, 0);
+        }
     }
 
     @Override

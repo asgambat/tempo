@@ -22,16 +22,21 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.util.UnstableApi;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.cappielloantonio.tempo.R;
 import com.cappielloantonio.tempo.databinding.FragmentArtistCatalogueBinding;
 import com.cappielloantonio.tempo.helper.recyclerview.GridItemDecoration;
 import com.cappielloantonio.tempo.interfaces.ClickCallback;
+import com.cappielloantonio.tempo.subsonic.models.ArtistID3;
 import com.cappielloantonio.tempo.ui.activity.MainActivity;
 import com.cappielloantonio.tempo.ui.adapter.ArtistCatalogueAdapter;
 import com.cappielloantonio.tempo.util.Constants;
 import com.cappielloantonio.tempo.viewmodel.ArtistCatalogueViewModel;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @UnstableApi
 public class ArtistCatalogueFragment extends Fragment implements ClickCallback {
@@ -42,6 +47,8 @@ public class ArtistCatalogueFragment extends Fragment implements ClickCallback {
     private ArtistCatalogueViewModel artistCatalogueViewModel;
 
     private ArtistCatalogueAdapter artistAdapter;
+
+    private String currentSort = Constants.ARTIST_ORDER_BY_NAME;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -106,7 +113,12 @@ public class ArtistCatalogueFragment extends Fragment implements ClickCallback {
 
         artistAdapter = new ArtistCatalogueAdapter(this);
         artistAdapter.setStateRestorationPolicy(RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY);
+        artistAdapter.setOnItemsChangedListener(this::updateAlphabetIndex);
         bind.artistCatalogueRecyclerView.setAdapter(artistAdapter);
+
+        bind.artistCatalogueAlphabetIndexBar.setOnPositionSelectedListener(this::scrollToPosition);
+        bind.artistCatalogueAlphabetIndexBar.watchScroll(bind.artistCatalogueRecyclerView);
+
         artistCatalogueViewModel.getArtistList().observe(getViewLifecycleOwner(), artistList -> artistAdapter.setItems(artistList));
 
         bind.artistCatalogueRecyclerView.setOnTouchListener((v, event) -> {
@@ -153,10 +165,10 @@ public class ArtistCatalogueFragment extends Fragment implements ClickCallback {
 
         popup.setOnMenuItemClickListener(menuItem -> {
             if (menuItem.getItemId() == R.id.menu_artist_sort_name) {
-                artistAdapter.sort(Constants.ARTIST_ORDER_BY_NAME);
+                sortBy(Constants.ARTIST_ORDER_BY_NAME);
                 return true;
             } else if (menuItem.getItemId() == R.id.menu_artist_sort_random) {
-                artistAdapter.sort(Constants.ARTIST_ORDER_BY_RANDOM);
+                sortBy(Constants.ARTIST_ORDER_BY_RANDOM);
                 return true;
             }
 
@@ -164,6 +176,42 @@ public class ArtistCatalogueFragment extends Fragment implements ClickCallback {
         });
 
         popup.show();
+    }
+
+    // L'indice A-Z ha senso solo con l'ordine alfabetico: con un altro ordinamento una lettera
+    // porterebbe a righe che non iniziano con quella lettera.
+    private void sortBy(String order) {
+        currentSort = order;
+        artistAdapter.sort(order);
+        updateAlphabetIndex();
+    }
+
+    private void updateAlphabetIndex() {
+        if (bind == null) return;
+
+        if (!Constants.ARTIST_ORDER_BY_NAME.equals(currentSort)) {
+            bind.artistCatalogueAlphabetIndexBar.setTitles(null);
+            return;
+        }
+
+        List<String> titles = new ArrayList<>(artistAdapter.getItemCount());
+
+        for (int i = 0; i < artistAdapter.getItemCount(); i++) {
+            ArtistID3 artist = artistAdapter.getItem(i);
+            titles.add(artist != null ? artist.getName() : null);
+        }
+
+        bind.artistCatalogueAlphabetIndexBar.setTitles(titles);
+    }
+
+    private void scrollToPosition(int position) {
+        if (bind == null) return;
+
+        RecyclerView.LayoutManager layoutManager = bind.artistCatalogueRecyclerView.getLayoutManager();
+
+        if (layoutManager instanceof LinearLayoutManager) {
+            ((LinearLayoutManager) layoutManager).scrollToPositionWithOffset(position, 0);
+        }
     }
 
     @Override

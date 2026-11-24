@@ -66,6 +66,7 @@
     <string name="disc_titleless">Disc %1$s</string>
     <string name="directory_page_no_playable_songs">No playable songs in this folder</string>
     <string name="directory_page_play_with_subfolders_button">Play with subfolders</string>
+    <string name="directory_page_sort_button">Sort folders</string>
     <string name="download_directory_dialog_negative_button">Cancel</string>
     <string name="download_directory_dialog_positive_button">Download</string>
     <string name="download_directory_dialog_summary">All tracks in this folder will be downloaded. Tracks present in subfolders will not be downloaded.</string>
@@ -183,8 +184,10 @@
     <string name="menu_settings_button">Settings</string>
     <string name="menu_sort_artist">Artist</string>
     <string name="menu_sort_name">Name</string>
+    <string name="menu_sort_name_desc">Name (Z-A)</string>
     <string name="menu_sort_random">Random</string>
     <string name="menu_sort_recently_added">Recently added</string>
+    <string name="menu_sort_least_recently_added">Least recently added</string>
     <string name="menu_sort_recently_played">Recently played</string>
     <string name="menu_sort_most_played">Most played</string>
     <string name="menu_sort_most_recently_starred">Most recently starred</string>
@@ -305,7 +308,7 @@
     <string name="settings_max_bitrate_mobile">Bitrate in mobile</string>
     <string name="settings_max_bitrate_wifi">Bitrate in Wi-Fi</string>
     <string name="settings_media_cache">Size of media file cache</string>
-    <string name="settings_music_directory">Show music directories</string>
+        <string name="settings_music_directory">Show music directories</string>
     <string name="settings_music_directory_summary">If enabled, show the music directory section. Please note that for folder navigation to work properly, the server must support this feature.</string>
     <string name="settings_podcast">Show podcast</string>
     <string name="settings_podcast_summary">If enabled, show the podcast section. Restart the app for it to take full effect.</string>
@@ -441,5 +444,9 @@
     <string name="auto_playlists">Playlists</string>
     <string name="auto_podcasts">Podcasts</string>
     <string name="auto_radio_stations">Radio stations</string>
+    <string name="auto_play_all">Play all</string>
+    <string name="auto_shuffle_all">Shuffle all</string>
     <string name="auto_no_downloads">No downloaded tracks</string>
+    <string name="alphabet_index_label">A–Z</string>
+    <string name="alphabet_index_content_description">Jump to a letter</string>
 </resources>

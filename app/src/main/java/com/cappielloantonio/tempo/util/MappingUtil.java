@@ -3,6 +3,7 @@ package com.cappielloantonio.tempo.util;
 import android.net.Uri;
 import android.os.Bundle;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.MediaMetadata;
@@ -17,6 +18,7 @@ import com.cappielloantonio.tempo.subsonic.models.Child;
 import com.cappielloantonio.tempo.subsonic.models.InternetRadioStation;
 import com.cappielloantonio.tempo.subsonic.models.PodcastEpisode;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -145,7 +147,7 @@ public class MappingUtil {
 
     public static MediaItem mapDownloadedItem(Download download, boolean publicArtwork) {
         Uri uri = getStoredDownloadUri(download);
-        Uri artworkUri = publicArtwork ? getPublicArtworkUri(download.getCoverArtId()) : getDownloadArtworkUri(download.getCoverArtId());
+        Uri artworkUri = publicArtwork ? getDownloadedPublicArtworkUri(download.getCoverArtId()) : getDownloadArtworkUri(download.getCoverArtId());
 
         // Gli extras servono a MediaService per scrobble e chronology anche in riproduzione offline
         Bundle extras = buildMusicExtras(download, uri, !publicArtwork);
@@ -180,41 +182,41 @@ public class MappingUtil {
 
     private static Bundle buildMusicExtras(Child media, Uri uri, boolean includeUri) {
         Bundle bundle = new Bundle();
-        bundle.putString("id", media.getId());
-        bundle.putString("parentId", media.getParentId());
-        bundle.putBoolean("isDir", media.isDir());
-        bundle.putString("title", media.getTitle());
-        bundle.putString("album", media.getAlbum());
-        bundle.putString("artist", media.getArtist());
-        bundle.putInt("track", media.getTrack() != null ? media.getTrack() : 0);
-        bundle.putInt("year", media.getYear() != null ? media.getYear() : 0);
-        bundle.putString("genre", media.getGenre());
-        bundle.putString("coverArtId", media.getCoverArtId());
-        bundle.putLong("size", media.getSize() != null ? media.getSize() : 0);
-        bundle.putString("contentType", media.getContentType());
-        bundle.putString("suffix", media.getSuffix());
-        bundle.putString("transcodedContentType", media.getTranscodedContentType());
-        bundle.putString("transcodedSuffix", media.getTranscodedSuffix());
-        bundle.putInt("duration", media.getDuration() != null ? media.getDuration() : 0);
-        bundle.putInt("bitrate", media.getBitrate() != null ? media.getBitrate() : 0);
-        bundle.putString("path", media.getPath());
-        bundle.putBoolean("isVideo", media.isVideo());
-        bundle.putInt("userRating", media.getUserRating() != null ? media.getUserRating() : 0);
-        bundle.putDouble("averageRating", media.getAverageRating() != null ? media.getAverageRating() : 0);
-        bundle.putLong("playCount", media.getPlayCount() != null ? media.getPlayCount() : 0);
-        bundle.putInt("discNumber", media.getDiscNumber() != null ? media.getDiscNumber() : 0);
-        bundle.putLong("created", media.getCreated() != null ? media.getCreated().getTime() : 0);
-        bundle.putLong("starred", media.getStarred() != null ? media.getStarred().getTime() : 0);
-        bundle.putString("albumId", media.getAlbumId());
-        bundle.putString("artistId", media.getArtistId());
-        bundle.putString("type", Constants.MEDIA_TYPE_MUSIC);
-        bundle.putLong("bookmarkPosition", media.getBookmarkPosition() != null ? media.getBookmarkPosition() : 0);
-        bundle.putInt("originalWidth", media.getOriginalWidth() != null ? media.getOriginalWidth() : 0);
-        bundle.putInt("originalHeight", media.getOriginalHeight() != null ? media.getOriginalHeight() : 0);
+        bundle.putString(Constants.MEDIA_EXTRA_ID, media.getId());
+        bundle.putString(Constants.MEDIA_EXTRA_PARENT_ID, media.getParentId());
+        bundle.putBoolean(Constants.MEDIA_EXTRA_IS_DIR, media.isDir());
+        bundle.putString(Constants.MEDIA_EXTRA_TITLE, media.getTitle());
+        bundle.putString(Constants.MEDIA_EXTRA_ALBUM, media.getAlbum());
+        bundle.putString(Constants.MEDIA_EXTRA_ARTIST, media.getArtist());
+        bundle.putInt(Constants.MEDIA_EXTRA_TRACK, media.getTrack() != null ? media.getTrack() : 0);
+        bundle.putInt(Constants.MEDIA_EXTRA_YEAR, media.getYear() != null ? media.getYear() : 0);
+        bundle.putString(Constants.MEDIA_EXTRA_GENRE, media.getGenre());
+        bundle.putString(Constants.MEDIA_EXTRA_COVER_ART_ID, media.getCoverArtId());
+        bundle.putLong(Constants.MEDIA_EXTRA_SIZE, media.getSize() != null ? media.getSize() : 0);
+        bundle.putString(Constants.MEDIA_EXTRA_CONTENT_TYPE, media.getContentType());
+        bundle.putString(Constants.MEDIA_EXTRA_SUFFIX, media.getSuffix());
+        bundle.putString(Constants.MEDIA_EXTRA_TRANSCODED_CONTENT_TYPE, media.getTranscodedContentType());
+        bundle.putString(Constants.MEDIA_EXTRA_TRANSCODED_SUFFIX, media.getTranscodedSuffix());
+        bundle.putInt(Constants.MEDIA_EXTRA_DURATION, media.getDuration() != null ? media.getDuration() : 0);
+        bundle.putInt(Constants.MEDIA_EXTRA_BITRATE, media.getBitrate() != null ? media.getBitrate() : 0);
+        bundle.putString(Constants.MEDIA_EXTRA_PATH, media.getPath());
+        bundle.putBoolean(Constants.MEDIA_EXTRA_IS_VIDEO, media.isVideo());
+        bundle.putInt(Constants.MEDIA_EXTRA_USER_RATING, media.getUserRating() != null ? media.getUserRating() : 0);
+        bundle.putDouble(Constants.MEDIA_EXTRA_AVERAGE_RATING, media.getAverageRating() != null ? media.getAverageRating() : 0);
+        bundle.putLong(Constants.MEDIA_EXTRA_PLAY_COUNT, media.getPlayCount() != null ? media.getPlayCount() : 0);
+        bundle.putInt(Constants.MEDIA_EXTRA_DISC_NUMBER, media.getDiscNumber() != null ? media.getDiscNumber() : 0);
+        bundle.putLong(Constants.MEDIA_EXTRA_CREATED, media.getCreated() != null ? media.getCreated().getTime() : 0);
+        bundle.putLong(Constants.MEDIA_EXTRA_STARRED, media.getStarred() != null ? media.getStarred().getTime() : 0);
+        bundle.putString(Constants.MEDIA_EXTRA_ALBUM_ID, media.getAlbumId());
+        bundle.putString(Constants.MEDIA_EXTRA_ARTIST_ID, media.getArtistId());
+        bundle.putString(Constants.MEDIA_EXTRA_TYPE, Constants.MEDIA_TYPE_MUSIC);
+        bundle.putLong(Constants.MEDIA_EXTRA_BOOKMARK_POSITION, media.getBookmarkPosition() != null ? media.getBookmarkPosition() : 0);
+        bundle.putInt(Constants.MEDIA_EXTRA_ORIGINAL_WIDTH, media.getOriginalWidth() != null ? media.getOriginalWidth() : 0);
+        bundle.putInt(Constants.MEDIA_EXTRA_ORIGINAL_HEIGHT, media.getOriginalHeight() != null ? media.getOriginalHeight() : 0);
 
         // L'URI di streaming contiene le credenziali Subsonic e gli extras sono trasmessi ai
         // controller: niente chiave "uri" negli item esposti ad Android Auto (publicArtwork).
-        if (includeUri) bundle.putString("uri", uri.toString());
+        if (includeUri) bundle.putString(Constants.MEDIA_EXTRA_URI, uri.toString());
 
         return bundle;
     }
@@ -268,7 +270,7 @@ public class MappingUtil {
             return null;
         }
 
-        return MusicUtil.getCoverArtUri(artworkId, Preferences.getImageSize());
+        return MusicUtil.getCoverArtUri(artworkId, Constants.SESSION_ARTWORK_SIZE);
     }
 
     private static Uri getDownloadArtworkUri(String coverArtId) {
@@ -277,6 +279,24 @@ public class MappingUtil {
         }
 
         return Uri.parse(CustomGlideRequest.createUrl(coverArtId, Preferences.getImageSize()));
+    }
+
+    /**
+     * Artwork dei download per i controller esterni: l'URL pubblico richiede un server
+     * configurato, quindi senza server si usa l'URI locale (id Subsonic, opaco: non espone il path
+     * dei file dell'app). La copia su disco non viene cercata qui: la risolve il
+     * CachingBitmapLoader della sessione al momento della decodifica, fuori dal thread che
+     * costruisce la lista dei download. Se la copertina non è in cache l'artwork resta mancante.
+     */
+    @Nullable
+    private static Uri getDownloadedPublicArtworkUri(String coverArtId) {
+        Uri publicArtworkUri = getPublicArtworkUri(coverArtId);
+
+        if (publicArtworkUri != null) return publicArtworkUri;
+
+        if (coverArtId == null || coverArtId.isEmpty()) return null;
+
+        return LocalArtwork.uriFor(coverArtId);
     }
 
     public static boolean isServerConfigured() {
@@ -290,11 +310,11 @@ public class MappingUtil {
         Uri uri = Uri.parse(internetRadioStation.getStreamUrl());
 
         Bundle bundle = new Bundle();
-        bundle.putString("id", internetRadioStation.getId());
-        bundle.putString("title", internetRadioStation.getName());
-        bundle.putString("artist", uri.toString());
-        bundle.putString("uri", uri.toString());
-        bundle.putString("type", Constants.MEDIA_TYPE_RADIO);
+        bundle.putString(Constants.MEDIA_EXTRA_ID, internetRadioStation.getId());
+        bundle.putString(Constants.MEDIA_EXTRA_TITLE, internetRadioStation.getName());
+        bundle.putString(Constants.MEDIA_EXTRA_ARTIST, uri.toString());
+        bundle.putString(Constants.MEDIA_EXTRA_URI, uri.toString());
+        bundle.putString(Constants.MEDIA_EXTRA_TYPE, Constants.MEDIA_TYPE_RADIO);
 
         return new MediaItem.Builder()
                 .setMediaId(internetRadioStation.getId())
@@ -323,25 +343,25 @@ public class MappingUtil {
         Uri artworkUri = Uri.parse(CustomGlideRequest.createUrl(podcastEpisode.getCoverArtId(), Preferences.getImageSize()));
 
         Bundle bundle = new Bundle();
-        bundle.putString("id", podcastEpisode.getId());
-        bundle.putString("parentId", podcastEpisode.getParentId());
-        bundle.putBoolean("isDir", podcastEpisode.isDir());
-        bundle.putString("title", podcastEpisode.getTitle());
-        bundle.putString("album", podcastEpisode.getAlbum());
-        bundle.putString("artist", podcastEpisode.getArtist());
-        bundle.putInt("year", podcastEpisode.getYear() != null ? podcastEpisode.getYear() : 0);
-        bundle.putString("coverArtId", podcastEpisode.getCoverArtId());
-        bundle.putLong("size", podcastEpisode.getSize() != null ? podcastEpisode.getSize() : 0);
-        bundle.putString("contentType", podcastEpisode.getContentType());
-        bundle.putString("suffix", podcastEpisode.getSuffix());
-        bundle.putInt("duration", podcastEpisode.getDuration() != null ? podcastEpisode.getDuration() : 0);
-        bundle.putInt("bitrate", podcastEpisode.getBitrate() != null ? podcastEpisode.getBitrate() : 0);
-        bundle.putBoolean("isVideo", podcastEpisode.isVideo());
-        bundle.putLong("created", podcastEpisode.getCreated() != null ? podcastEpisode.getCreated().getTime() : 0);
-        bundle.putString("artistId", podcastEpisode.getArtistId());
-        bundle.putString("description", podcastEpisode.getDescription());
-        bundle.putString("type", Constants.MEDIA_TYPE_PODCAST);
-        bundle.putString("uri", uri.toString());
+        bundle.putString(Constants.MEDIA_EXTRA_ID, podcastEpisode.getId());
+        bundle.putString(Constants.MEDIA_EXTRA_PARENT_ID, podcastEpisode.getParentId());
+        bundle.putBoolean(Constants.MEDIA_EXTRA_IS_DIR, podcastEpisode.isDir());
+        bundle.putString(Constants.MEDIA_EXTRA_TITLE, podcastEpisode.getTitle());
+        bundle.putString(Constants.MEDIA_EXTRA_ALBUM, podcastEpisode.getAlbum());
+        bundle.putString(Constants.MEDIA_EXTRA_ARTIST, podcastEpisode.getArtist());
+        bundle.putInt(Constants.MEDIA_EXTRA_YEAR, podcastEpisode.getYear() != null ? podcastEpisode.getYear() : 0);
+        bundle.putString(Constants.MEDIA_EXTRA_COVER_ART_ID, podcastEpisode.getCoverArtId());
+        bundle.putLong(Constants.MEDIA_EXTRA_SIZE, podcastEpisode.getSize() != null ? podcastEpisode.getSize() : 0);
+        bundle.putString(Constants.MEDIA_EXTRA_CONTENT_TYPE, podcastEpisode.getContentType());
+        bundle.putString(Constants.MEDIA_EXTRA_SUFFIX, podcastEpisode.getSuffix());
+        bundle.putInt(Constants.MEDIA_EXTRA_DURATION, podcastEpisode.getDuration() != null ? podcastEpisode.getDuration() : 0);
+        bundle.putInt(Constants.MEDIA_EXTRA_BITRATE, podcastEpisode.getBitrate() != null ? podcastEpisode.getBitrate() : 0);
+        bundle.putBoolean(Constants.MEDIA_EXTRA_IS_VIDEO, podcastEpisode.isVideo());
+        bundle.putLong(Constants.MEDIA_EXTRA_CREATED, podcastEpisode.getCreated() != null ? podcastEpisode.getCreated().getTime() : 0);
+        bundle.putString(Constants.MEDIA_EXTRA_ARTIST_ID, podcastEpisode.getArtistId());
+        bundle.putString(Constants.MEDIA_EXTRA_DESCRIPTION, podcastEpisode.getDescription());
+        bundle.putString(Constants.MEDIA_EXTRA_TYPE, Constants.MEDIA_TYPE_PODCAST);
+        bundle.putString(Constants.MEDIA_EXTRA_URI, uri.toString());
 
         MediaItem item = new MediaItem.Builder()
                 .setMediaId(podcastEpisode.getId())

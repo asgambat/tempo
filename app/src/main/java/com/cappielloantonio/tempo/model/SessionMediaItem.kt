@@ -17,7 +17,6 @@ import com.cappielloantonio.tempo.subsonic.models.PodcastEpisode
 import com.cappielloantonio.tempo.util.Constants
 import com.cappielloantonio.tempo.util.MappingUtil
 import com.cappielloantonio.tempo.util.MusicUtil
-import com.cappielloantonio.tempo.util.Preferences.getImageSize
 import java.util.Date
 
 @UnstableApi
@@ -200,41 +199,41 @@ class SessionMediaItem() {
         // Senza coverArtId si usa albumId; se manca anche quello niente URI: un "id=null" sarebbe
         // uguale per tutti i brani e l'host terrebbe la copertina dell'album precedente.
         val artworkUri = MappingUtil.getArtworkId(coverArtId, albumId)?.let {
-            MusicUtil.getCoverArtUri(it, getImageSize())
+            MusicUtil.getCoverArtUri(it, Constants.SESSION_ARTWORK_SIZE)
         }
 
         val bundle = Bundle()
-        bundle.putString("id", id)
-        bundle.putString("parentId", parentId)
-        bundle.putBoolean("isDir", isDir)
-        bundle.putString("title", title)
-        bundle.putString("album", album)
-        bundle.putString("artist", artist)
-        bundle.putInt("track", track ?: 0)
-        bundle.putInt("year", year ?: 0)
-        bundle.putString("genre", genre)
-        bundle.putString("coverArtId", coverArtId)
-        bundle.putLong("size", size ?: 0)
-        bundle.putString("contentType", contentType)
-        bundle.putString("suffix", suffix)
-        bundle.putString("transcodedContentType", transcodedContentType)
-        bundle.putString("transcodedSuffix", transcodedSuffix)
-        bundle.putInt("duration", duration ?: 0)
-        bundle.putInt("bitrate", bitrate ?: 0)
-        bundle.putString("path", path)
-        bundle.putBoolean("isVideo", isVideo)
-        bundle.putInt("userRating", userRating ?: 0)
-        bundle.putDouble("averageRating", averageRating ?: .0)
-        bundle.putLong("playCount", playCount ?: 0)
-        bundle.putInt("discNumber", discNumber ?: 0)
-        bundle.putLong("created", created?.time ?: 0)
-        bundle.putLong("starred", starred?.time ?: 0)
-        bundle.putString("albumId", albumId)
-        bundle.putString("artistId", artistId)
-        bundle.putString("type", Constants.MEDIA_TYPE_MUSIC)
-        bundle.putLong("bookmarkPosition", bookmarkPosition ?: 0)
-        bundle.putInt("originalWidth", originalWidth ?: 0)
-        bundle.putInt("originalHeight", originalHeight ?: 0)
+        bundle.putString(Constants.MEDIA_EXTRA_ID, id)
+        bundle.putString(Constants.MEDIA_EXTRA_PARENT_ID, parentId)
+        bundle.putBoolean(Constants.MEDIA_EXTRA_IS_DIR, isDir)
+        bundle.putString(Constants.MEDIA_EXTRA_TITLE, title)
+        bundle.putString(Constants.MEDIA_EXTRA_ALBUM, album)
+        bundle.putString(Constants.MEDIA_EXTRA_ARTIST, artist)
+        bundle.putInt(Constants.MEDIA_EXTRA_TRACK, track ?: 0)
+        bundle.putInt(Constants.MEDIA_EXTRA_YEAR, year ?: 0)
+        bundle.putString(Constants.MEDIA_EXTRA_GENRE, genre)
+        bundle.putString(Constants.MEDIA_EXTRA_COVER_ART_ID, coverArtId)
+        bundle.putLong(Constants.MEDIA_EXTRA_SIZE, size ?: 0)
+        bundle.putString(Constants.MEDIA_EXTRA_CONTENT_TYPE, contentType)
+        bundle.putString(Constants.MEDIA_EXTRA_SUFFIX, suffix)
+        bundle.putString(Constants.MEDIA_EXTRA_TRANSCODED_CONTENT_TYPE, transcodedContentType)
+        bundle.putString(Constants.MEDIA_EXTRA_TRANSCODED_SUFFIX, transcodedSuffix)
+        bundle.putInt(Constants.MEDIA_EXTRA_DURATION, duration ?: 0)
+        bundle.putInt(Constants.MEDIA_EXTRA_BITRATE, bitrate ?: 0)
+        bundle.putString(Constants.MEDIA_EXTRA_PATH, path)
+        bundle.putBoolean(Constants.MEDIA_EXTRA_IS_VIDEO, isVideo)
+        bundle.putInt(Constants.MEDIA_EXTRA_USER_RATING, userRating ?: 0)
+        bundle.putDouble(Constants.MEDIA_EXTRA_AVERAGE_RATING, averageRating ?: .0)
+        bundle.putLong(Constants.MEDIA_EXTRA_PLAY_COUNT, playCount ?: 0)
+        bundle.putInt(Constants.MEDIA_EXTRA_DISC_NUMBER, discNumber ?: 0)
+        bundle.putLong(Constants.MEDIA_EXTRA_CREATED, created?.time ?: 0)
+        bundle.putLong(Constants.MEDIA_EXTRA_STARRED, starred?.time ?: 0)
+        bundle.putString(Constants.MEDIA_EXTRA_ALBUM_ID, albumId)
+        bundle.putString(Constants.MEDIA_EXTRA_ARTIST_ID, artistId)
+        bundle.putString(Constants.MEDIA_EXTRA_TYPE, Constants.MEDIA_TYPE_MUSIC)
+        bundle.putLong(Constants.MEDIA_EXTRA_BOOKMARK_POSITION, bookmarkPosition ?: 0)
+        bundle.putInt(Constants.MEDIA_EXTRA_ORIGINAL_WIDTH, originalWidth ?: 0)
+        bundle.putInt(Constants.MEDIA_EXTRA_ORIGINAL_HEIGHT, originalHeight ?: 0)
         // Nessun extras "uri": il bundle è esposto ad Android Auto e l'URI contiene credenziali
 
         return MediaItem.Builder()

@@ -4,6 +4,7 @@ import android.app.Notification;
 import android.content.Context;
 
 import androidx.core.app.NotificationCompat;
+import androidx.media3.common.MediaItem;
 import androidx.media3.common.util.BitmapLoader;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.database.DatabaseProvider;
@@ -15,6 +16,7 @@ import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.datasource.ResolvingDataSource;
 import androidx.media3.datasource.cache.Cache;
+import androidx.media3.datasource.cache.CacheDataSink;
 import androidx.media3.datasource.cache.CacheDataSource;
 import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor;
 import androidx.media3.datasource.cache.NoOpCacheEvictor;
@@ -24,6 +26,7 @@ import androidx.media3.exoplayer.RenderersFactory;
 import androidx.media3.exoplayer.offline.DownloadManager;
 import androidx.media3.exoplayer.offline.DownloadNotificationHelper;
 
+import com.cappielloantonio.tempo.App;
 import com.cappielloantonio.tempo.service.DownloaderManager;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -44,15 +47,23 @@ public final class DownloadUtil {
 
     private static final String STREAMING_CACHE_CONTENT_DIRECTORY = "streaming_cache";
     private static final String DOWNLOAD_CONTENT_DIRECTORY = "downloads";
+    private static final String ARTWORK_CACHE_CONTENT_DIRECTORY = "artwork_cache";
+
+    // Copertine su disco: 50 MB coprono centinaia di album e la cache è la prima cosa
+    // sacrificabile, quindi basta un LRU sullo spazio.
+    private static final long ARTWORK_CACHE_SIZE_BYTES = 50L * 1024 * 1024;
 
     private static DataSource.Factory dataSourceFactory;
     private static DataSource.Factory httpDataSourceFactory;
     private static DatabaseProvider databaseProvider;
+    private static BitmapLoader artworkBitmapLoader;
+    private static CachingBitmapLoader cachingArtworkLoader;
     private static ListeningExecutorService artworkExecutor;
     private static File streamingCacheDirectory;
     private static File downloadDirectory;
     private static Cache downloadCache;
     private static SimpleCache streamingCache;
+    private static SimpleCache artworkCache;
     private static DownloadManager downloadManager;
     private static DownloaderManager downloaderManager;
     private static DownloadNotificationHelper downloadNotificationHelper;
@@ -86,16 +97,71 @@ public final class DownloadUtil {
     /**
      * DataSource per gli artwork "pubblici": aggiunge le credenziali Subsonic solo alle richieste
      * getCoverArt del server configurato, così gli URI esposti ad Android Auto restano senza token.
+     * La cache su disco sta sopra la risoluzione delle credenziali: la chiave è l'URL pubblico e
+     * resta valida anche quando cambia il token, così le copertine sopravvivono al riavvio del
+     * servizio.
      */
     public static DataSource.Factory getArtworkDataSourceFactory() {
-        return new ResolvingDataSource.Factory(
+        DataSource.Factory upstreamFactory = new ResolvingDataSource.Factory(
                 getHttpDataSourceFactory(),
                 dataSpec -> dataSpec.withUri(MusicUtil.withCoverArtCredentials(dataSpec.uri))
         );
+
+        return new CacheDataSource.Factory()
+                .setCache(getArtworkCache())
+                .setUpstreamDataSourceFactory(upstreamFactory)
+                .setCacheWriteDataSinkFactory(new CacheDataSink.Factory().setCache(getArtworkCache()))
+                .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR);
     }
 
-    public static BitmapLoader buildArtworkBitmapLoader() {
-        return new DataSourceBitmapLoader(getArtworkExecutor(), getArtworkDataSourceFactory());
+    public static synchronized Cache getArtworkCache() {
+        if (artworkCache == null) {
+            File artworkContentDirectory = new File(App.getContext().getCacheDir(), ARTWORK_CACHE_CONTENT_DIRECTORY);
+
+            artworkCache = new SimpleCache(
+                    artworkContentDirectory,
+                    new LeastRecentlyUsedCacheEvictor(ARTWORK_CACHE_SIZE_BYTES),
+                    getDatabaseProvider(App.getContext())
+            );
+        }
+
+        return artworkCache;
+    }
+
+    /**
+     * Loader condiviso dalla sessione (artwork di auto e notifica) e dal prefetch: la cache in
+     * memoria funziona solo se entrambi usano la stessa istanza.
+     */
+    public static synchronized BitmapLoader buildArtworkBitmapLoader() {
+        if (artworkBitmapLoader == null) {
+            cachingArtworkLoader = new CachingBitmapLoader(
+                    new DataSourceBitmapLoader(getArtworkExecutor(), getArtworkDataSourceFactory()),
+                    getArtworkExecutor()
+            );
+
+            // Le copertine locali (content URI di LocalArtwork) le serve lo stesso loader, così usano
+            // l'executor e la cache in memoria condivisi con gli artwork di rete.
+            artworkBitmapLoader = cachingArtworkLoader;
+        }
+
+        return artworkBitmapLoader;
+    }
+
+    /**
+     * Scalda la cache dell'artwork al cambio brano: il brano corrente condivide la richiesta già
+     * fatta dalla sessione, il successivo parte al termine per non ritardare quello visibile.
+     *
+     * Su rete a consumo non si anticipa nulla: la sessione carica comunque l'artwork che serve,
+     * mentre il prefetch sarebbe una richiesta da 500 px in più per ogni brano.
+     */
+    public static void prefetchArtwork(MediaItem mediaItem, MediaItem nextMediaItem) {
+        if (NetworkUtil.isMetered()) return;
+
+        buildArtworkBitmapLoader();
+
+        if (cachingArtworkLoader != null) {
+            cachingArtworkLoader.prefetch(mediaItem, nextMediaItem);
+        }
     }
 
     private static synchronized ListeningExecutorService getArtworkExecutor() {
